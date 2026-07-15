@@ -33,6 +33,10 @@ private:
   int piece_y_ = 2;
   bool paused_ = true;
   bool game_over_ = false;
+  // 0 = playing, 1 = animating a full row, 2 = moving rows above it down.
+  int cleanup_phase_ = 0;
+  int cleanup_row_ = 0;
+  int cleanup_count_ = 0;
 };
 
 extern Data data_;

@@ -25,6 +25,10 @@ void main::Data::Load() {
     toolbox::Load("GAME_PIECE_Y", piece_y_, 0, board_height_);
     toolbox::Load("GAME_PAUSED", paused_, false, false);
     toolbox::Load("GAME_OVER", game_over_, false, false);
+    toolbox::Load("GAME_CLEANUP_PHASE", cleanup_phase_, 0, 3);
+    toolbox::Load("GAME_CLEANUP_ROW", cleanup_row_, 0, board_height_);
+    toolbox::Load("GAME_CLEANUP_COUNT", cleanup_count_, 0,
+                  board_height_ + 1);
     for (int y = 0; y < board_height_; ++y) {
       std::ostringstream key;
       key << "GAME_BOARD_" << y;
@@ -57,6 +61,9 @@ void main::Data::Save() {
   toolbox::Save("GAME_PIECE_Y", piece_y_);
   toolbox::Save("GAME_PAUSED", paused_);
   toolbox::Save("GAME_OVER", game_over_);
+  toolbox::Save("GAME_CLEANUP_PHASE", cleanup_phase_);
+  toolbox::Save("GAME_CLEANUP_ROW", cleanup_row_);
+  toolbox::Save("GAME_CLEANUP_COUNT", cleanup_count_);
   for (int y = 0; y < board_height_; ++y) {
     std::ostringstream key;
     key << "GAME_BOARD_" << y;
@@ -77,4 +84,7 @@ void main::Data::Reset() {
   board_ = {};
   paused_ = true;
   game_over_ = false;
+  cleanup_phase_ = 0;
+  cleanup_row_ = 0;
+  cleanup_count_ = 0;
 }

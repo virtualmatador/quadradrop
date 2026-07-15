@@ -36,7 +36,9 @@ private:
   bool Rotate();
   void HardDrop();
   void LockPiece();
-  void ClearLines();
+  bool BeginCleanup();
+  void AdvanceCleanup();
+  int FindFullRow() const;
   void SpawnPiece();
   int RandomPiece();
   int Level() const;

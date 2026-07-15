@@ -105,6 +105,14 @@ void main::Game::Run() {
         break;
       if (data_.paused_ || data_.game_over_)
         continue;
+      if (data_.cleanup_phase_) {
+        if (++frame_ >= 5) {
+          frame_ = 0;
+          AdvanceCleanup();
+          bridge::AsyncMessage(index_, "game", "render", "");
+        }
+        continue;
+      }
       if (++frame_ >= GravityFrames()) {
         frame_ = 0;
         Step();
@@ -138,10 +146,13 @@ void main::Game::HandleAction(const char *action) {
       data_.lines_ = 0;
       data_.paused_ = false;
       data_.game_over_ = false;
+      data_.cleanup_phase_ = 0;
+      data_.cleanup_count_ = 0;
       data_.next_piece_ = RandomPiece();
       SpawnPiece();
       changed = true;
-    } else if (!data_.paused_ && !data_.game_over_) {
+    } else if (!data_.paused_ && !data_.game_over_ &&
+               !data_.cleanup_phase_) {
       if (std::strcmp(action, "left") == 0) {
         changed = Move(-1, 0);
         sound = changed ? "move" : nullptr;
@@ -218,31 +229,57 @@ void main::Game::LockPiece() {
     const int y = data_.piece_y_ + block[1];
     data_.board_[y][data_.piece_x_ + block[0]] = data_.piece_ + 1;
   }
-  ClearLines();
-  SpawnPiece();
+  if (!BeginCleanup())
+    SpawnPiece();
   if (data_.sound_)
     bridge::AsyncMessage(index_, "game", "audio",
                          data_.game_over_ ? "die" : "turn");
 }
 
-void main::Game::ClearLines() {
-  int cleared = 0;
-  for (int y = height_ - 1; y >= 0;) {
+int main::Game::FindFullRow() const {
+  for (int y = height_ - 1; y >= hidden_rows_; --y) {
     if (std::all_of(data_.board_[y].begin(), data_.board_[y].end(),
-                    [](int cell) { return cell != 0; })) {
-      for (int row = y; row > 0; --row)
-        data_.board_[row] = data_.board_[row - 1];
-      data_.board_[0].fill(0);
-      ++cleared;
-    } else {
-      --y;
-    }
+                    [](int cell) { return cell != 0; }))
+      return y;
   }
-  if (!cleared)
+  return -1;
+}
+
+bool main::Game::BeginCleanup() {
+  const int row = FindFullRow();
+  if (row < 0)
+    return false;
+  data_.cleanup_phase_ = 1;
+  data_.cleanup_row_ = row;
+  data_.cleanup_count_ = 0;
+  frame_ = 0;
+  return true;
+}
+
+void main::Game::AdvanceCleanup() {
+  if (data_.cleanup_phase_ == 1) {
+    data_.board_[data_.cleanup_row_].fill(0);
+    data_.cleanup_phase_ = 2;
     return;
+  }
+  for (int row = data_.cleanup_row_; row > 0; --row)
+    data_.board_[row] = data_.board_[row - 1];
+  data_.board_[0].fill(0);
+  ++data_.cleanup_count_;
+  ++data_.lines_;
+  const int row = FindFullRow();
+  if (row >= 0) {
+    data_.cleanup_row_ = row;
+    data_.cleanup_phase_ = 1;
+    return;
+  }
   static constexpr int points[] = {0, 100, 300, 500, 800};
-  data_.score_ += points[cleared] * Level();
-  data_.lines_ += cleared;
+  const int cleared = std::min(data_.cleanup_count_, 4);
+  const int cleanup_level = (data_.lines_ - data_.cleanup_count_) / 10 + 1;
+  data_.score_ += points[cleared] * cleanup_level;
+  data_.cleanup_phase_ = 0;
+  data_.cleanup_count_ = 0;
+  SpawnPiece();
   if (data_.sound_)
     bridge::AsyncMessage(index_, "game", "audio",
                          cleared == 4 ? "win" : "food");
@@ -275,13 +312,16 @@ int main::Game::GravityFrames() const { return std::max(2, 18 - Level()); }
 bool main::Game::ValidateData() const {
   if (!data_.game_initialized_)
     return false;
+  if (data_.cleanup_phase_)
+    return data_.cleanup_phase_ <= 2 && data_.cleanup_row_ >= 0 &&
+           data_.cleanup_row_ < height_;
   return data_.game_over_ ||
          Fits(data_.piece_, data_.rotation_, data_.piece_x_, data_.piece_y_);
 }
 
 std::string main::Game::BoardState() const {
   auto visible = data_.board_;
-  if (!data_.game_over_) {
+  if (!data_.game_over_ && !data_.cleanup_phase_) {
     for (const auto &block : shapes[data_.piece_][data_.rotation_])
       visible[data_.piece_y_ + block[1]][data_.piece_x_ + block[0]] =
           data_.piece_ + 1;
@@ -304,6 +344,8 @@ std::string main::Game::NextState() const {
 void main::Game::Render() {
   std::string board;
   std::string next;
+  int cleanup_phase;
+  int cleanup_row;
   int score;
   int lines;
   int level;
@@ -313,6 +355,8 @@ void main::Game::Render() {
     std::lock_guard<std::mutex> guard(lock_);
     board = BoardState();
     next = NextState();
+    cleanup_phase = data_.cleanup_phase_;
+    cleanup_row = data_.cleanup_row_ - hidden_rows_;
     score = data_.score_;
     lines = data_.lines_;
     level = Level();
@@ -322,7 +366,8 @@ void main::Game::Render() {
   std::ostringstream js;
   js << "renderGame('" << board << "','" << next << "'," << score << ','
      << lines << ',' << level << ',' << (paused ? "true" : "false") << ','
-     << (game_over ? "true" : "false") << ')';
+     << (game_over ? "true" : "false") << ',' << cleanup_phase << ','
+     << cleanup_row << ')';
   bridge::CallFunction(js.str().c_str());
 }
 
