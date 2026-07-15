@@ -2,14 +2,20 @@ const audioIds = ['move', 'food', 'turn', 'win', 'die'];
 const audios = {};
 let audioContext;
 let pointerStart = null;
+let longPressTimer = null;
+let longPressTriggered = false;
+
+const gestureThreshold = 18;
+const longPressDelay = 500;
 
 function sendAction(action) {
     CallHandler('game', 'action', action);
 }
 
-function setup() {
+function setup(showControls) {
     buildCells(document.getElementById('board'), 200);
     buildCells(document.getElementById('next'), 16);
+    document.getElementById('controls').hidden = !showControls;
 
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return;
@@ -44,6 +50,7 @@ function renderGame(board, next, score, lines, level, paused, gameOver) {
     document.getElementById('score').textContent = score;
     document.getElementById('lines').textContent = lines;
     document.getElementById('level').textContent = level;
+    document.getElementById('pause').textContent = paused ? 'Resume' : 'Pause';
 
     const overlay = document.getElementById('overlay');
     overlay.hidden = !paused && !gameOver;
@@ -65,16 +72,44 @@ function playAudio(id) {
 
 function pointerDown(event) {
     pointerStart = {x: event.clientX, y: event.clientY};
+    longPressTriggered = false;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    clearTimeout(longPressTimer);
+    longPressTimer = setTimeout(function () {
+        if (!pointerStart) return;
+        longPressTriggered = true;
+        sendAction('drop');
+    }, longPressDelay);
+}
+
+function pointerMove(event) {
+    if (!pointerStart) return;
+    const dx = event.clientX - pointerStart.x;
+    const dy = event.clientY - pointerStart.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) >= gestureThreshold) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
 }
 
 function pointerUp(event) {
     if (!pointerStart) return;
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
     const dx = event.clientX - pointerStart.x;
     const dy = event.clientY - pointerStart.y;
     pointerStart = null;
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) sendAction('rotate');
+    if (longPressTriggered) return;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < gestureThreshold) sendAction('rotate');
     else if (Math.abs(dx) > Math.abs(dy)) sendAction(dx < 0 ? 'left' : 'right');
     else sendAction(dy < 0 ? 'rotate' : 'down');
+}
+
+function pointerCancel() {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    pointerStart = null;
+    longPressTriggered = false;
 }
 
 document.addEventListener('keydown', function (event) {

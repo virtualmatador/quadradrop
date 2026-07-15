@@ -32,3 +32,13 @@ function sound()
 {
     CallHandler("sound", "click", document.getElementById("sound").checked.toString());
 }
+
+function setShowControls(show)
+{
+    document.getElementById("show-controls").checked = show;
+}
+
+function showControls()
+{
+    CallHandler("show-controls", "click", document.getElementById("show-controls").checked.toString());
+}

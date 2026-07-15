@@ -23,6 +23,7 @@ private:
   int score_ = 0;
   int lines_ = 0;
   bool sound_ = true;
+  bool show_controls_ = true;
   bool game_initialized_ = false;
   Board board_{};
   int piece_ = 0;

@@ -12,6 +12,9 @@ void main::Data::Load() {
     toolbox::Load("GAME_SCORE", score_, 0, score_max_ + 1);
     toolbox::Load("GAME_LINES", lines_, 0, lines_max_ + 1);
     toolbox::Load("GAME_SOUND", sound_, false, false);
+    // Older saved games predate this preference and should retain their data.
+    if (!bridge::GetPreference("GAME_SHOW_CONTROLS").empty())
+      toolbox::Load("GAME_SHOW_CONTROLS", show_controls_, false, false);
     toolbox::Load("GAME_INITIALIZED", game_initialized_, false, false);
     if (!game_initialized_)
       return;
@@ -43,6 +46,7 @@ void main::Data::Save() {
   toolbox::Save("GAME_SCORE", score_);
   toolbox::Save("GAME_LINES", lines_);
   toolbox::Save("GAME_SOUND", sound_);
+  toolbox::Save("GAME_SHOW_CONTROLS", show_controls_);
   toolbox::Save("GAME_INITIALIZED", game_initialized_);
   if (!game_initialized_)
     return;
@@ -68,6 +72,7 @@ void main::Data::Reset() {
   score_ = 0;
   lines_ = 0;
   sound_ = true;
+  show_controls_ = true;
   game_initialized_ = false;
   board_ = {};
   paused_ = true;

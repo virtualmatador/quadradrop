@@ -66,8 +66,7 @@ main::Game::Game() {
     SyncData();
   }
   bridge::LoadView(index_,
-                   static_cast<std::int32_t>(core::VIEW_INFO::Landscape) |
-                       static_cast<std::int32_t>(core::VIEW_INFO::ScreenOn) |
+                   static_cast<std::int32_t>(core::VIEW_INFO::ScreenOn) |
                        static_cast<std::int32_t>(core::VIEW_INFO::AudioNoSolo),
                    "game");
 }
@@ -84,7 +83,9 @@ main::Game::~Game() {
 }
 
 void main::Game::Setup() {
-  bridge::CallFunction("setup()");
+  std::ostringstream js;
+  js << "setup(" << (data_.show_controls_ ? "true" : "false") << ")";
+  bridge::CallFunction(js.str().c_str());
   Render();
   Run();
 }
@@ -215,17 +216,6 @@ void main::Game::LockPiece() {
     board_[y][piece_x_ + block[0]] = piece_ + 1;
   }
   ClearLines();
-  const bool above_visible_board = std::any_of(
-      board_.begin(), board_.begin() + hidden_rows_, [](const auto &row) {
-        return std::any_of(row.begin(), row.end(),
-                           [](int cell) { return cell != 0; });
-      });
-  if (above_visible_board) {
-    game_over_ = true;
-    if (data_.sound_)
-      bridge::AsyncMessage(index_, "game", "audio", "die");
-    return;
-  }
   SpawnPiece();
   if (data_.sound_)
     bridge::AsyncMessage(index_, "game", "audio", game_over_ ? "die" : "turn");
