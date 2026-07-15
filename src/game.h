@@ -18,8 +18,6 @@ class Game : public core::Stage {
   static constexpr int visible_height_ = 20;
   static constexpr int hidden_rows_ = 4;
   static constexpr int height_ = visible_height_ + hidden_rows_;
-  using Board = std::array<std::array<int, width_>, height_>;
-
 public:
   Game();
   ~Game();
@@ -43,22 +41,13 @@ private:
   int RandomPiece();
   int Level() const;
   int GravityFrames() const;
-  bool RestoreData();
-  void SyncData();
+  bool ValidateData() const;
   std::string BoardState() const;
   std::string NextState() const;
   void Render();
   void PlayAudio(const char *audio);
 
-  Board board_{};
-  int piece_ = 0;
-  int next_piece_ = 0;
-  int rotation_ = 0;
-  int piece_x_ = 3;
-  int piece_y_ = 0;
   int frame_ = 0;
-  bool paused_ = true;
-  bool game_over_ = false;
   bool run_ = true;
   std::random_device seeder_;
   std::default_random_engine random_{seeder_()};

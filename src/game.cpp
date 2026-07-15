@@ -55,15 +55,17 @@ main::Game::Game() {
       PlayAudio(info);
   };
 
-  if (!RestoreData()) {
-    board_ = {};
+  if (data_.game_initialized_)
+    data_.paused_ = true;
+  if (!ValidateData()) {
+    data_.board_ = {};
     data_.score_ = 0;
     data_.lines_ = 0;
-    paused_ = true;
-    game_over_ = false;
-    next_piece_ = RandomPiece();
+    data_.paused_ = true;
+    data_.game_over_ = false;
+    data_.next_piece_ = RandomPiece();
     SpawnPiece();
-    SyncData();
+    data_.game_initialized_ = true;
   }
   bridge::LoadView(index_,
                    static_cast<std::int32_t>(core::VIEW_INFO::ScreenOn) |
@@ -74,7 +76,6 @@ main::Game::Game() {
 main::Game::~Game() {
   {
     std::lock_guard<std::mutex> guard(lock_);
-    SyncData();
     run_ = false;
   }
   waiter_.notify_all();
@@ -102,7 +103,7 @@ void main::Game::Run() {
       if (waiter_.wait_for(guard, std::chrono::milliseconds(50),
                            [this] { return !run_; }))
         break;
-      if (paused_ || game_over_)
+      if (data_.paused_ || data_.game_over_)
         continue;
       if (++frame_ >= GravityFrames()) {
         frame_ = 0;
@@ -126,21 +127,21 @@ void main::Game::HandleAction(const char *action) {
     if (std::strcmp(action, "back") == 0) {
       // Escape outside the lock because destroying this stage joins the worker.
     } else if (std::strcmp(action, "pause") == 0) {
-      if (!game_over_) {
-        paused_ = !paused_;
+      if (!data_.game_over_) {
+        data_.paused_ = !data_.paused_;
         frame_ = 0;
         changed = true;
       }
     } else if (std::strcmp(action, "restart") == 0) {
-      board_ = {};
+      data_.board_ = {};
       data_.score_ = 0;
       data_.lines_ = 0;
-      paused_ = false;
-      game_over_ = false;
-      next_piece_ = RandomPiece();
+      data_.paused_ = false;
+      data_.game_over_ = false;
+      data_.next_piece_ = RandomPiece();
       SpawnPiece();
       changed = true;
-    } else if (!paused_ && !game_over_) {
+    } else if (!data_.paused_ && !data_.game_over_) {
       if (std::strcmp(action, "left") == 0) {
         changed = Move(-1, 0);
         sound = changed ? "move" : nullptr;
@@ -176,26 +177,28 @@ bool main::Game::Fits(int type, int rotation, int x, int y) const {
   for (const auto &block : shapes[type][rotation]) {
     const int bx = x + block[0];
     const int by = y + block[1];
-    if (bx < 0 || bx >= width_ || by < 0 || by >= height_ || board_[by][bx])
+    if (bx < 0 || bx >= width_ || by < 0 || by >= height_ ||
+        data_.board_[by][bx])
       return false;
   }
   return true;
 }
 
 bool main::Game::Move(int dx, int dy) {
-  if (!Fits(piece_, rotation_, piece_x_ + dx, piece_y_ + dy))
+  if (!Fits(data_.piece_, data_.rotation_, data_.piece_x_ + dx,
+            data_.piece_y_ + dy))
     return false;
-  piece_x_ += dx;
-  piece_y_ += dy;
+  data_.piece_x_ += dx;
+  data_.piece_y_ += dy;
   return true;
 }
 
 bool main::Game::Rotate() {
-  const int next = (rotation_ + 1) % 4;
+  const int next = (data_.rotation_ + 1) % 4;
   for (int kick : {0, -1, 1, -2, 2}) {
-    if (Fits(piece_, next, piece_x_ + kick, piece_y_)) {
-      rotation_ = next;
-      piece_x_ += kick;
+    if (Fits(data_.piece_, next, data_.piece_x_ + kick, data_.piece_y_)) {
+      data_.rotation_ = next;
+      data_.piece_x_ += kick;
       return true;
     }
   }
@@ -211,24 +214,25 @@ void main::Game::HardDrop() {
 }
 
 void main::Game::LockPiece() {
-  for (const auto &block : shapes[piece_][rotation_]) {
-    const int y = piece_y_ + block[1];
-    board_[y][piece_x_ + block[0]] = piece_ + 1;
+  for (const auto &block : shapes[data_.piece_][data_.rotation_]) {
+    const int y = data_.piece_y_ + block[1];
+    data_.board_[y][data_.piece_x_ + block[0]] = data_.piece_ + 1;
   }
   ClearLines();
   SpawnPiece();
   if (data_.sound_)
-    bridge::AsyncMessage(index_, "game", "audio", game_over_ ? "die" : "turn");
+    bridge::AsyncMessage(index_, "game", "audio",
+                         data_.game_over_ ? "die" : "turn");
 }
 
 void main::Game::ClearLines() {
   int cleared = 0;
   for (int y = height_ - 1; y >= 0;) {
-    if (std::all_of(board_[y].begin(), board_[y].end(),
+    if (std::all_of(data_.board_[y].begin(), data_.board_[y].end(),
                     [](int cell) { return cell != 0; })) {
       for (int row = y; row > 0; --row)
-        board_[row] = board_[row - 1];
-      board_[0].fill(0);
+        data_.board_[row] = data_.board_[row - 1];
+      data_.board_[0].fill(0);
       ++cleared;
     } else {
       --y;
@@ -245,14 +249,14 @@ void main::Game::ClearLines() {
 }
 
 void main::Game::SpawnPiece() {
-  piece_ = next_piece_;
-  next_piece_ = RandomPiece();
-  rotation_ = 0;
-  piece_x_ = 3;
-  piece_y_ = hidden_rows_ - 2;
+  data_.piece_ = data_.next_piece_;
+  data_.next_piece_ = RandomPiece();
+  data_.rotation_ = 0;
+  data_.piece_x_ = 3;
+  data_.piece_y_ = hidden_rows_ - 2;
   frame_ = 0;
-  if (!Fits(piece_, rotation_, piece_x_, piece_y_)) {
-    game_over_ = true;
+  if (!Fits(data_.piece_, data_.rotation_, data_.piece_x_, data_.piece_y_)) {
+    data_.game_over_ = true;
   }
 }
 
@@ -268,37 +272,19 @@ int main::Game::Level() const { return data_.lines_ / 10 + 1; }
 
 int main::Game::GravityFrames() const { return std::max(2, 18 - Level()); }
 
-bool main::Game::RestoreData() {
+bool main::Game::ValidateData() const {
   if (!data_.game_initialized_)
     return false;
-  board_ = data_.board_;
-  piece_ = data_.piece_;
-  next_piece_ = data_.next_piece_;
-  rotation_ = data_.rotation_;
-  piece_x_ = data_.piece_x_;
-  piece_y_ = data_.piece_y_;
-  paused_ = true;
-  game_over_ = data_.game_over_;
-  return game_over_ || Fits(piece_, rotation_, piece_x_, piece_y_);
-}
-
-void main::Game::SyncData() {
-  data_.game_initialized_ = true;
-  data_.board_ = board_;
-  data_.piece_ = piece_;
-  data_.next_piece_ = next_piece_;
-  data_.rotation_ = rotation_;
-  data_.piece_x_ = piece_x_;
-  data_.piece_y_ = piece_y_;
-  data_.paused_ = paused_;
-  data_.game_over_ = game_over_;
+  return data_.game_over_ ||
+         Fits(data_.piece_, data_.rotation_, data_.piece_x_, data_.piece_y_);
 }
 
 std::string main::Game::BoardState() const {
-  auto visible = board_;
-  if (!game_over_) {
-    for (const auto &block : shapes[piece_][rotation_])
-      visible[piece_y_ + block[1]][piece_x_ + block[0]] = piece_ + 1;
+  auto visible = data_.board_;
+  if (!data_.game_over_) {
+    for (const auto &block : shapes[data_.piece_][data_.rotation_])
+      visible[data_.piece_y_ + block[1]][data_.piece_x_ + block[0]] =
+          data_.piece_ + 1;
   }
   std::string state;
   state.reserve(width_ * visible_height_);
@@ -310,8 +296,8 @@ std::string main::Game::BoardState() const {
 
 std::string main::Game::NextState() const {
   std::string state(16, '0');
-  for (const auto &block : shapes[next_piece_][0])
-    state[block[1] * 4 + block[0]] = static_cast<char>('1' + next_piece_);
+  for (const auto &block : shapes[data_.next_piece_][0])
+    state[block[1] * 4 + block[0]] = static_cast<char>('1' + data_.next_piece_);
   return state;
 }
 
@@ -325,14 +311,13 @@ void main::Game::Render() {
   bool game_over;
   {
     std::lock_guard<std::mutex> guard(lock_);
-    SyncData();
     board = BoardState();
     next = NextState();
     score = data_.score_;
     lines = data_.lines_;
     level = Level();
-    paused = paused_;
-    game_over = game_over_;
+    paused = data_.paused_;
+    game_over = data_.game_over_;
   }
   std::ostringstream js;
   js << "renderGame('" << board << "','" << next << "'," << score << ','

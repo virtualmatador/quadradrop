@@ -6,6 +6,7 @@
 //  Copyright © 2020 Shaidin. All rights reserved.
 //
 
+#include <locale>
 #include <sstream>
 
 #include "main.h"
@@ -19,6 +20,7 @@ main::PROGRESS main::progress_ = main::PROGRESS::MENU;
 
 void life_cycle::Begin()
 {
+    std::locale::global(std::locale::classic());
     main::data_.Load();
 }
 
