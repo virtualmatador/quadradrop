@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+    <link rel="stylesheet" href="menu.css">
+    <script src="menu.js" ></script>
+    <title>QuadraDrop</title>
+</head>
+<body>
+    <table id="controls">
+        <tr>
+            <td colspan="2" class="title">
+                QuadraDrop
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <button onclick="play()">Play</button>
+            </td>
+        </tr>
+        <tr>
+            <td class="key">
+                Lines:
+            </td>
+            <td>
+                <div id="lines">0</div>
+            </td>
+        </tr>
+        <tr>
+            <td class="key">
+                Level:
+            </td>
+            <td>
+                <div id="level">0</div>
+            </td>
+        </tr>
+        <tr>
+            <td class="key">
+                Score:
+            </td>
+            <td>
+                <div id="score">0</div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <button onclick="reset()">Reset</button>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" class="title">
+                Options
+            </td colspan="2">
+        </tr>
+        <tr>
+            <td colspan="2">
+                <input id="sound" type="checkbox" onclick="sound()"><label for="sound">Sound</label>
+            </td>
+        </tr>
+    </table>
+    <table>
+        <tr id="how-to-play">
+            <td class="title">
+                How to Play
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <ol>
+                    <li>
+                        Press the "Play" button to open the game board.
+                    </li>
+                    <li>
+                        The board opens paused so you can get ready.
+                    </li>
+                    <li>
+                        Press Pause to begin, then move with the arrow keys or on-screen controls.
+                    </li>
+                    <li>
+                        Move and rotate each falling piece to complete horizontal lines.
+                    </li>
+                    <li>
+                        Clearing several lines at once awards more points.
+                    </li>
+                    <li>
+                        Swipe or use the controls to move; tap the board to rotate.
+                    </li>
+                    <li>
+                        Use Drop or the Space bar to place a piece immediately.
+                    </li>
+                    <li>
+                        Tap the back button at the top-right corner to return to the menu.
+                    </li>
+                </ol>
+            </td>
+        </tr>
+        <tr>
+            <td id="end-of-game" class="title">
+                End of Game
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <ul>
+                    <li>
+                        The game ends when a new piece cannot enter the board.
+                    </li>
+                    <li>
+                        Every ten cleared lines increases the level and falling speed.
+                    </li>
+                    <li>
+                        To play again, press the "Reset" button.
+                    </li>
+                    <li>
+                        Resetting the game clears your score and line count.
+                    </li>
+                </ul>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">QuadraDrop game icon</title>
+  <desc id="desc">Colorful falling blocks forming a compact T on a dark game board.</desc>
+
+  <!-- The broad border and block gaps are deliberately oversized so the mark
+       remains crisp when the desktop build rasterizes it at 16 and 22 pixels. -->
+  <rect x="16" y="16" width="480" height="480" rx="104" fill="#111827"/>
+  <rect x="28" y="28" width="456" height="456" rx="92" fill="none" stroke="#263449" stroke-width="8"/>
+
+  <!-- Falling piece -->
+  <g fill="#f7c948">
+    <rect x="212" y="60" width="88" height="88" rx="16"/>
+    <rect x="212" y="156" width="88" height="88" rx="16"/>
+  </g>
+  <path d="M228 76h56" stroke="#ffe89a" stroke-width="8" stroke-linecap="round" opacity=".7"/>
+
+  <!-- Interlocking pile, arranged as a bold T silhouette -->
+  <g>
+    <rect x="68" y="252" width="88" height="88" rx="16" fill="#22c7d6"/>
+    <rect x="164" y="252" width="88" height="88" rx="16" fill="#22c7d6"/>
+
+    <rect x="260" y="252" width="88" height="88" rx="16" fill="#f05d7b"/>
+    <rect x="356" y="252" width="88" height="88" rx="16" fill="#f05d7b"/>
+
+    <rect x="164" y="348" width="88" height="88" rx="16" fill="#8b6ee8"/>
+    <rect x="260" y="348" width="88" height="88" rx="16" fill="#8b6ee8"/>
+  </g>
+
+  <!-- Consistent top-edge highlights give each tile a subtle tactile lift. -->
+  <g fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".24">
+    <path d="M84 268h56"/>
+    <path d="M180 268h56"/>
+    <path d="M276 268h56"/>
+    <path d="M372 268h56"/>
+    <path d="M180 364h56"/>
+    <path d="M276 364h56"/>
+    <path d="M228 172h56"/>
+  </g>
+</svg>

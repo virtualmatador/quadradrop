@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1, user-scalable=0">
+    <link rel="stylesheet" href="game.css">
+    <script src="game.js" defer></script>
+    <title>QuadraDrop</title>
+</head>
+<body>
+    <main class="game-shell">
+        <section class="board-wrap" aria-label="QuadraDrop board">
+            <div id="board" class="board" onpointerdown="pointerDown(event)" onpointerup="pointerUp(event)"></div>
+            <div id="overlay" class="overlay" hidden>
+                <strong id="overlay-title">Paused</strong>
+                <span id="overlay-help">Press Pause to continue</span>
+                <button id="restart" hidden onclick="sendAction('restart')">Restart</button>
+            </div>
+        </section>
+        <aside class="sidebar">
+            <button class="back" aria-label="Back to menu" onclick="sendAction('back')">&#10005;</button>
+            <div class="panel"><span>Score</span><strong id="score">0</strong></div>
+            <div class="panel"><span>Lines</span><strong id="lines">0</strong></div>
+            <div class="panel"><span>Level</span><strong id="level">1</strong></div>
+            <div class="panel next-panel"><span>Next</span><div id="next" class="next"></div></div>
+            <div class="controls">
+                <button onclick="sendAction('rotate')">Rotate</button>
+                <button onclick="sendAction('left')">&#9664;</button>
+                <button onclick="sendAction('down')">&#9660;</button>
+                <button onclick="sendAction('right')">&#9654;</button>
+                <button onclick="sendAction('drop')">Drop</button>
+                <button onclick="sendAction('pause')">Pause</button>
+            </div>
+        </aside>
+    </main>
+</body>
+</html>
