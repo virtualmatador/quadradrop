@@ -40,6 +40,8 @@ private:
   void AdvanceCleanup();
   int FindFullRow() const;
   void SpawnPiece();
+  bool PieceEnteredView() const;
+  void UpdatePreview();
   int RandomPiece();
   int Level() const;
   int GravityFrames() const;
@@ -50,6 +52,7 @@ private:
   void PlayAudio(const char *audio);
 
   int frame_ = 0;
+  bool preview_pending_ = false;
   bool run_ = true;
   std::random_device seeder_;
   std::default_random_engine random_{seeder_()};

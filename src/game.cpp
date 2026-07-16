@@ -66,7 +66,9 @@ main::Game::Game() {
     data_.next_piece_ = RandomPiece();
     SpawnPiece();
     data_.game_initialized_ = true;
-  }
+  } else if (!data_.game_over_ && !data_.cleanup_phase_ &&
+             !PieceEnteredView())
+    preview_pending_ = true;
   bridge::LoadView(index_,
                    static_cast<std::int32_t>(core::VIEW_INFO::ScreenOn) |
                        static_cast<std::int32_t>(core::VIEW_INFO::AudioNoSolo),
@@ -201,6 +203,7 @@ bool main::Game::Move(int dx, int dy) {
     return false;
   data_.piece_x_ += dx;
   data_.piece_y_ += dy;
+  UpdatePreview();
   return true;
 }
 
@@ -210,6 +213,7 @@ bool main::Game::Rotate() {
     if (Fits(data_.piece_, next, data_.piece_x_ + kick, data_.piece_y_)) {
       data_.rotation_ = next;
       data_.piece_x_ += kick;
+      UpdatePreview();
       return true;
     }
   }
@@ -260,6 +264,8 @@ void main::Game::AdvanceCleanup() {
   if (data_.cleanup_phase_ == 1) {
     data_.board_[data_.cleanup_row_].fill(0);
     data_.cleanup_phase_ = 2;
+    if (data_.sound_)
+      bridge::AsyncMessage(index_, "game", "audio", "food");
     return;
   }
   for (int row = data_.cleanup_row_; row > 0; --row)
@@ -280,20 +286,34 @@ void main::Game::AdvanceCleanup() {
   data_.cleanup_phase_ = 0;
   data_.cleanup_count_ = 0;
   SpawnPiece();
-  if (data_.sound_)
-    bridge::AsyncMessage(index_, "game", "audio",
-                         cleared == 4 ? "win" : "food");
+  if (data_.sound_ && cleared == 4)
+    bridge::AsyncMessage(index_, "game", "audio", "win");
 }
 
 void main::Game::SpawnPiece() {
   data_.piece_ = data_.next_piece_;
-  data_.next_piece_ = RandomPiece();
   data_.rotation_ = 0;
   data_.piece_x_ = 3;
   data_.piece_y_ = hidden_rows_ - 2;
+  preview_pending_ = true;
   frame_ = 0;
   if (!Fits(data_.piece_, data_.rotation_, data_.piece_x_, data_.piece_y_)) {
     data_.game_over_ = true;
+  }
+}
+
+bool main::Game::PieceEnteredView() const {
+  return std::any_of(shapes[data_.piece_][data_.rotation_],
+                     shapes[data_.piece_][data_.rotation_] + 4,
+                     [this](const int (&block)[2]) {
+                       return data_.piece_y_ + block[1] >= hidden_rows_;
+                     });
+}
+
+void main::Game::UpdatePreview() {
+  if (preview_pending_ && PieceEnteredView()) {
+    data_.next_piece_ = RandomPiece();
+    preview_pending_ = false;
   }
 }
 
