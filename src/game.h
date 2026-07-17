@@ -33,7 +33,7 @@ private:
   void HandleAction(const char *action);
   bool Fits(int type, int rotation, int x, int y) const;
   bool Move(int dx, int dy);
-  bool Rotate();
+  bool Rotate(int direction = 1);
   void HardDrop();
   void LockPiece();
   bool BeginCleanup();

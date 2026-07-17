@@ -2,6 +2,10 @@ const audioIds = ['move', 'food', 'turn', 'win', 'die'];
 const audios = {};
 let audioContext;
 let pointerStart = null;
+let pointerLast = null;
+let swipeRemainder = {x: 0, y: 0};
+let swipeMoved = false;
+let swipeActions = {x: false, y: false};
 let longPressTimer = null;
 let longPressTriggered = false;
 
@@ -100,6 +104,10 @@ function playAudio(id) {
 
 function pointerDown(event) {
   pointerStart = {x: event.clientX, y: event.clientY};
+  pointerLast = {x: event.clientX, y: event.clientY};
+  swipeRemainder = {x: 0, y: 0};
+  swipeMoved = false;
+  swipeActions = {x: false, y: false};
   longPressTriggered = false;
   event.currentTarget.setPointerCapture(event.pointerId);
   clearTimeout(longPressTimer);
@@ -111,35 +119,81 @@ function pointerDown(event) {
 }
 
 function pointerMove(event) {
-  if (!pointerStart) return;
+  if (!pointerStart || longPressTriggered) return;
   const dx = event.clientX - pointerStart.x;
   const dy = event.clientY - pointerStart.y;
-  if (Math.max(Math.abs(dx), Math.abs(dy)) >= gestureThreshold) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
+  const moveX = event.clientX - pointerLast.x;
+  const moveY = event.clientY - pointerLast.y;
+  pointerLast = {x: event.clientX, y: event.clientY};
+  swipeRemainder.x += moveX;
+  swipeRemainder.y = Math.max(0, swipeRemainder.y + moveY);
+
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < gestureThreshold) return;
+  swipeMoved = true;
+  clearTimeout(longPressTimer);
+  longPressTimer = null;
+
+  const bounds = event.currentTarget.getBoundingClientRect();
+  const stepX = bounds.width / 10;
+  const stepY = bounds.height / 20;
+  const horizontalSteps = Math.floor(Math.abs(swipeRemainder.x) / stepX);
+  const verticalSteps = Math.floor(swipeRemainder.y / stepY);
+  const horizontalAction = swipeRemainder.x < 0 ? 'left' : 'right';
+  let horizontalDone = 0;
+  let verticalDone = 0;
+
+  // Interleave diagonal movement in roughly the order that grid lines are
+  // crossed instead of applying one entire axis before the other.
+  while (horizontalDone < horizontalSteps || verticalDone < verticalSteps) {
+    const nextHorizontal = horizontalDone < horizontalSteps
+        ? (horizontalDone + 1) / horizontalSteps
+        : Infinity;
+    const nextVertical = verticalDone < verticalSteps
+        ? (verticalDone + 1) / verticalSteps
+        : Infinity;
+    if (nextHorizontal <= nextVertical) {
+      sendAction(horizontalAction);
+      ++horizontalDone;
+      swipeActions.x = true;
+    } else {
+      sendAction('down');
+      ++verticalDone;
+      swipeActions.y = true;
+    }
   }
+
+  swipeRemainder.x -= Math.sign(swipeRemainder.x) * horizontalSteps * stepX;
+  swipeRemainder.y -= verticalSteps * stepY;
 }
 
 function pointerUp(event) {
   if (!pointerStart) return;
+  pointerMove(event);
   clearTimeout(longPressTimer);
   longPressTimer = null;
   const dx = event.clientX - pointerStart.x;
   const dy = event.clientY - pointerStart.y;
   pointerStart = null;
+  pointerLast = null;
   if (longPressTriggered) return;
-  if (Math.max(Math.abs(dx), Math.abs(dy)) < gestureThreshold)
-    sendAction('rotate');
-  else if (Math.abs(dx) > Math.abs(dy))
-    sendAction(dx < 0 ? 'left' : 'right');
-  else
-    sendAction(dy < 0 ? 'rotate' : 'down');
+  if (!swipeMoved) {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    sendAction(event.clientX < bounds.left + bounds.width / 2
+        ? 'rotate-left'
+        : 'rotate-right');
+  } else {
+    if (!swipeActions.x && Math.abs(dx) >= gestureThreshold)
+      sendAction(dx < 0 ? 'left' : 'right');
+    if (!swipeActions.y && dy >= gestureThreshold)
+      sendAction('down');
+  }
 }
 
 function pointerCancel() {
   clearTimeout(longPressTimer);
   longPressTimer = null;
   pointerStart = null;
+  pointerLast = null;
   longPressTriggered = false;
 }
 

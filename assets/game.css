@@ -52,9 +52,11 @@ button:active { background: #334155; transform: translateY(1px); }
 .panel strong { font-size: 1.15rem; }
 .next-panel { display: block; }
 .next { width: min(18vh, 100%); aspect-ratio: 1; margin: .5rem auto 0; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 2px; }
-.controls { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; }
+.controls { margin-top: auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: .4rem; }
 .controls[hidden] { display: none; }
-.controls button:first-child, .controls button:last-child { grid-column: span 3; }
+.rotate-control { grid-column: span 3; font-size: 1.25em; }
+.move-control { grid-column: span 2; }
+.drop-control { grid-column: span 6; }
 
 @media (max-height: 480px) {
     .sidebar { gap: .35rem; }

@@ -27,11 +27,12 @@
             <div class="panel"><span>Level</span><strong id="level">1</strong></div>
             <div class="panel next-panel"><span>Next</span><div id="next" class="next"></div></div>
             <div id="controls" class="controls">
-                <button onclick="sendAction('rotate')">Rotate</button>
-                <button onclick="sendAction('left')">&#9664;</button>
-                <button onclick="sendAction('down')">&#9660;</button>
-                <button onclick="sendAction('right')">&#9654;</button>
-                <button onclick="sendAction('drop')">Drop</button>
+                <button class="rotate-control" aria-label="Rotate left" title="Rotate left" onclick="sendAction('rotate-left')">&#8634;</button>
+                <button class="rotate-control" aria-label="Rotate right" title="Rotate right" onclick="sendAction('rotate-right')">&#8635;</button>
+                <button class="move-control" aria-label="Move left" onclick="sendAction('left')">&#9664;</button>
+                <button class="move-control" aria-label="Move down" onclick="sendAction('down')">&#9660;</button>
+                <button class="move-control" aria-label="Move right" onclick="sendAction('right')">&#9654;</button>
+                <button class="drop-control" onclick="sendAction('drop')">Drop</button>
             </div>
         </aside>
     </main>

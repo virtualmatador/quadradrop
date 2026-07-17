@@ -161,8 +161,12 @@ void main::Game::HandleAction(const char *action) {
       } else if (std::strcmp(action, "right") == 0) {
         changed = Move(1, 0);
         sound = changed ? "move" : nullptr;
-      } else if (std::strcmp(action, "rotate") == 0) {
-        changed = Rotate();
+      } else if (std::strcmp(action, "rotate") == 0 ||
+                 std::strcmp(action, "rotate-right") == 0) {
+        changed = Rotate(1);
+        sound = changed ? "turn" : nullptr;
+      } else if (std::strcmp(action, "rotate-left") == 0) {
+        changed = Rotate(-1);
         sound = changed ? "turn" : nullptr;
       } else if (std::strcmp(action, "down") == 0) {
         changed = Move(0, 1);
@@ -207,8 +211,8 @@ bool main::Game::Move(int dx, int dy) {
   return true;
 }
 
-bool main::Game::Rotate() {
-  const int next = (data_.rotation_ + 1) % 4;
+bool main::Game::Rotate(int direction) {
+  const int next = (data_.rotation_ + direction + 4) % 4;
   for (int kick : {0, -1, 1, -2, 2}) {
     if (Fits(data_.piece_, next, data_.piece_x_ + kick, data_.piece_y_)) {
       data_.rotation_ = next;
