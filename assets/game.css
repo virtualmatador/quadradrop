@@ -82,7 +82,7 @@ button:active { background: #334155; transform: translateY(1px); }
     .sidebar .panel:nth-child(5) { grid-column: 1; }
     .panel { align-self: stretch; flex-direction: column; justify-content: center; padding: .4rem; }
     .panel span { font-size: clamp(.55rem, 2.2vw, .8rem); }
-    .panel strong { font-size: clamp(.8rem, 3.5vw, 1.15rem); }
+    .panel strong { font-size: clamp(.8rem, 3.5vw, 1.15rem); flex: 1; align-self: end; }
     .next-panel { display: flex; align-items: center; gap: .35rem; }
     .next { width: min(9vh, 100%); margin: 0 auto; }
     .board-wrap {
@@ -96,7 +96,8 @@ button:active { background: #334155; transform: translateY(1px); }
         grid-column: 1 / -1;
         grid-row: 3;
         display: grid;
-        width: 100%;
+        width: min(100%, 18rem);
+        justify-self: center;
         margin-top: 0;
     }
     .controls[hidden] { display: none; }
