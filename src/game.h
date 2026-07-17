@@ -47,6 +47,7 @@ private:
   int GravityFrames() const;
   bool ValidateData() const;
   std::string BoardState() const;
+  std::string ActiveState() const;
   std::string NextState() const;
   void Render();
   void PlayAudio(const char *audio);

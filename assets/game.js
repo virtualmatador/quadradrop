@@ -1,6 +1,7 @@
-const audioIds = ['move', 'food', 'turn', 'win', 'die'];
+const audioIds = ['move', 'food', 'turn', 'lock', 'win', 'die'];
 const audios = {};
 let audioContext;
+let gamePaused = false;
 let pointerStart = null;
 let pointerLast = null;
 let swipeRemainder = {x: 0, y: 0};
@@ -55,19 +56,22 @@ function paint(element, state) {
 }
 
 function renderGame(
-    board, next, score, lines, level, paused, gameOver, cleanupPhase,
+    board, active, next, score, lines, level, paused, gameOver, cleanupPhase,
     cleanupRow) {
+  gamePaused = paused;
   const boardElement = document.getElementById('board');
-  boardElement.querySelectorAll('.cell-clearing, .cell-moving').forEach(
-      function(cell) {
+  boardElement.querySelectorAll('.cell-clearing, .cell-moving')
+      .forEach(function(cell) {
         cell.classList.remove('cell-clearing', 'cell-moving');
       });
   paint(boardElement, board);
+  for (let i = 0; i < active.length; ++i)
+    boardElement.children[i].classList.toggle('cell-active', active[i] === '1');
   if (cleanupRow >= 0 && cleanupRow < 20) {
     if (cleanupPhase === 1) {
       for (let column = 0; column < 10; ++column) {
-        boardElement.children[cleanupRow * 10 + column]
-            .classList.add('cell-clearing');
+        boardElement.children[cleanupRow * 10 + column].classList.add(
+            'cell-clearing');
       }
     } else if (cleanupPhase === 2) {
       for (let row = 0; row < cleanupRow; ++row) {
@@ -89,7 +93,7 @@ function renderGame(
   document.getElementById('overlay-title').textContent =
       gameOver ? 'Game Over' : 'Paused';
   document.getElementById('overlay-help').textContent =
-      gameOver ? 'Press restart to play again' : 'Press Pause to continue';
+      gameOver ? 'Press "Restart" to play again' : 'Press "Resume" to continue';
   document.getElementById('restart').hidden = !gameOver;
 }
 
@@ -145,12 +149,12 @@ function pointerMove(event) {
   // Interleave diagonal movement in roughly the order that grid lines are
   // crossed instead of applying one entire axis before the other.
   while (horizontalDone < horizontalSteps || verticalDone < verticalSteps) {
-    const nextHorizontal = horizontalDone < horizontalSteps
-        ? (horizontalDone + 1) / horizontalSteps
-        : Infinity;
-    const nextVertical = verticalDone < verticalSteps
-        ? (verticalDone + 1) / verticalSteps
-        : Infinity;
+    const nextHorizontal = horizontalDone < horizontalSteps ?
+        (horizontalDone + 1) / horizontalSteps :
+        Infinity;
+    const nextVertical = verticalDone < verticalSteps ?
+        (verticalDone + 1) / verticalSteps :
+        Infinity;
     if (nextHorizontal <= nextVertical) {
       sendAction(horizontalAction);
       ++horizontalDone;
@@ -178,14 +182,13 @@ function pointerUp(event) {
   if (longPressTriggered) return;
   if (!swipeMoved) {
     const bounds = event.currentTarget.getBoundingClientRect();
-    sendAction(event.clientX < bounds.left + bounds.width / 2
-        ? 'rotate-left'
-        : 'rotate-right');
+    sendAction(
+        event.clientX < bounds.left + bounds.width / 2 ? 'rotate-left' :
+                                                         'rotate-right');
   } else {
     if (!swipeActions.x && Math.abs(dx) >= gestureThreshold)
       sendAction(dx < 0 ? 'left' : 'right');
-    if (!swipeActions.y && dy >= gestureThreshold)
-      sendAction('down');
+    if (!swipeActions.y && dy >= gestureThreshold) sendAction('down');
   }
 }
 
@@ -204,10 +207,12 @@ document.addEventListener('keydown', function(event) {
     ArrowDown: 'down',
     ArrowUp: 'rotate',
     Space: 'drop',
-    KeyP: 'pause',
     Escape: 'back'
   };
-  const action = actions[event.code];
+  let action = actions[event.code];
+  if ((event.code === 'KeyP' && !gamePaused) ||
+      (event.code === 'KeyR' && gamePaused))
+    action = 'pause';
   if (action) {
     event.preventDefault();
     sendAction(action);
