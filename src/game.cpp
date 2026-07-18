@@ -57,18 +57,8 @@ main::Game::Game() {
 
   if (data_.game_initialized_)
     data_.paused_ = true;
-  if (!ValidateData()) {
-    data_.board_ = {};
-    data_.score_ = 0;
-    data_.lines_ = 0;
-    data_.paused_ = true;
-    data_.game_over_ = false;
-    ChooseNextPiece();
-    SpawnPiece();
-    data_.game_initialized_ = true;
-  } else if (!data_.game_over_ && !data_.cleanup_phase_ &&
-             !PieceEnteredView())
-    preview_pending_ = true;
+  if (!ValidateData())
+    StartNewGame(true);
   bridge::LoadView(index_,
                    static_cast<std::int32_t>(core::VIEW_INFO::ScreenOn) |
                        static_cast<std::int32_t>(core::VIEW_INFO::AudioNoSolo),
@@ -83,6 +73,20 @@ main::Game::~Game() {
   waiter_.notify_all();
   if (worker_.joinable())
     worker_.join();
+}
+
+void main::Game::StartNewGame(bool paused) {
+  data_.board_ = {};
+  data_.score_ = 0;
+  data_.lines_ = 0;
+  data_.paused_ = paused;
+  data_.game_over_ = false;
+  data_.cleanup_phase_ = 0;
+  data_.cleanup_row_ = 0;
+  data_.cleanup_count_ = 0;
+  ChooseNextPiece();
+  SpawnPiece(false);
+  data_.game_initialized_ = true;
 }
 
 void main::Game::Setup() {
@@ -143,15 +147,7 @@ void main::Game::HandleAction(const char *action) {
         changed = true;
       }
     } else if (std::strcmp(action, "restart") == 0) {
-      data_.board_ = {};
-      data_.score_ = 0;
-      data_.lines_ = 0;
-      data_.paused_ = false;
-      data_.game_over_ = false;
-      data_.cleanup_phase_ = 0;
-      data_.cleanup_count_ = 0;
-      ChooseNextPiece();
-      SpawnPiece();
+      StartNewGame(false);
       changed = true;
     } else if (!data_.paused_ && !data_.game_over_ &&
                !data_.cleanup_phase_) {
@@ -207,7 +203,6 @@ bool main::Game::Move(int dx, int dy) {
     return false;
   data_.piece_x_ += dx;
   data_.piece_y_ += dy;
-  UpdatePreview();
   return true;
 }
 
@@ -217,7 +212,6 @@ bool main::Game::Rotate(int direction) {
     if (Fits(data_.piece_, next, data_.piece_x_ + kick, data_.piece_y_)) {
       data_.rotation_ = next;
       data_.piece_x_ += kick;
-      UpdatePreview();
       return true;
     }
   }
@@ -294,35 +288,44 @@ void main::Game::AdvanceCleanup() {
     bridge::AsyncMessage(index_, "game", "audio", "win");
 }
 
-void main::Game::SpawnPiece() {
-  data_.piece_ = data_.next_piece_;
-  data_.rotation_ = data_.next_rotation_;
-  data_.piece_x_ = data_.next_piece_x_;
-  data_.piece_y_ = data_.next_piece_y_;
-  preview_pending_ = true;
+void main::Game::SpawnPiece(bool has_previous_piece) {
+  const int piece = data_.next_piece_;
+  const int rotation = data_.next_rotation_;
+  const int x = data_.next_piece_x_;
+  const int y = data_.next_piece_y_;
+
+  ChooseNextPiece(piece, has_previous_piece ? data_.piece_ : -1);
+
+  data_.piece_ = piece;
+  data_.rotation_ = rotation;
+  data_.piece_x_ = x;
+  data_.piece_y_ = y;
   frame_ = 0;
   if (!Fits(data_.piece_, data_.rotation_, data_.piece_x_, data_.piece_y_)) {
     data_.game_over_ = true;
   }
 }
 
-bool main::Game::PieceEnteredView() const {
-  return std::any_of(shapes[data_.piece_][data_.rotation_],
-                     shapes[data_.piece_][data_.rotation_] + 4,
-                     [this](const int (&block)[2]) {
-                       return data_.piece_y_ + block[1] >= hidden_rows_;
-                     });
-}
-
-void main::Game::UpdatePreview() {
-  if (preview_pending_ && PieceEnteredView()) {
-    ChooseNextPiece();
-    preview_pending_ = false;
+void main::Game::ChooseNextPiece(int previous_piece, int earlier_piece) {
+  int weights[7];
+  if (previous_piece < 0) {
+    std::fill(std::begin(weights), std::end(weights), 19);
+  } else if (earlier_piece < 0 || previous_piece == earlier_piece) {
+    std::fill(std::begin(weights), std::end(weights), 22);
+    weights[previous_piece] = 1;
+  } else {
+    std::fill(std::begin(weights), std::end(weights), 26);
+    weights[previous_piece] = 1;
+    weights[earlier_piece] = 2;
   }
-}
 
-void main::Game::ChooseNextPiece() {
-  data_.next_piece_ = std::uniform_int_distribution<int>(0, 6)(random_);
+  int selection = std::uniform_int_distribution<int>(1, 133)(random_);
+  for (data_.next_piece_ = 0; data_.next_piece_ < 6;
+       ++data_.next_piece_) {
+    selection -= weights[data_.next_piece_];
+    if (selection <= 0)
+      break;
+  }
   data_.next_rotation_ = std::uniform_int_distribution<int>(0, 3)(random_);
 
   int min_x = 3;
@@ -336,7 +339,22 @@ void main::Game::ChooseNextPiece() {
 
   data_.next_piece_x_ =
       std::uniform_int_distribution<int>(3 - min_x, 6 - max_x)(random_);
-  data_.next_piece_y_ = hidden_rows_ - 1 - max_y;
+  data_.next_piece_y_ = hidden_rows_ - max_y;
+}
+
+bool main::Game::ValidNextPiece() const {
+  for (const auto &block :
+       shapes[data_.next_piece_][data_.next_rotation_]) {
+    const int x = data_.next_piece_x_ + block[0];
+    const int y = data_.next_piece_y_ + block[1];
+    if (x < 3 || x > 6 || y < 0 || y > hidden_rows_)
+      return false;
+  }
+  return std::any_of(shapes[data_.next_piece_][data_.next_rotation_],
+                     shapes[data_.next_piece_][data_.next_rotation_] + 4,
+                     [this](const int (&block)[2]) {
+                       return data_.next_piece_y_ + block[1] == hidden_rows_;
+                     });
 }
 
 int main::Game::Level() const { return data_.lines_ / 10 + 1; }
@@ -344,7 +362,7 @@ int main::Game::Level() const { return data_.lines_ / 10 + 1; }
 int main::Game::GravityFrames() const { return std::max(2, 18 - Level()); }
 
 bool main::Game::ValidateData() const {
-  if (!data_.game_initialized_)
+  if (!data_.game_initialized_ || !ValidNextPiece())
     return false;
   if (data_.cleanup_phase_)
     return data_.cleanup_phase_ <= 2 && data_.cleanup_row_ >= 0 &&
@@ -382,11 +400,18 @@ std::string main::Game::ActiveState() const {
 }
 
 std::string main::Game::NextState() const {
+  return PreviewState(data_.next_piece_, data_.next_rotation_,
+                      data_.next_piece_x_, data_.next_piece_y_);
+}
+
+std::string main::Game::PreviewState(int type, int rotation, int x,
+                                    int y) const {
   std::string state(16, '0');
-  for (const auto &block : shapes[data_.next_piece_][data_.next_rotation_]) {
-    const int x = data_.next_piece_x_ + block[0] - 3;
-    const int y = data_.next_piece_y_ + block[1] - (hidden_rows_ - 3);
-    state[y * 4 + x] = static_cast<char>('1' + data_.next_piece_);
+  for (const auto &block : shapes[type][rotation]) {
+    const int preview_x = x + block[0] - 3;
+    const int preview_y = y + block[1] - (hidden_rows_ - 3);
+    if (preview_x >= 0 && preview_x < 4 && preview_y >= 0 && preview_y < 4)
+      state[preview_y * 4 + preview_x] = static_cast<char>('1' + type);
   }
   return state;
 }

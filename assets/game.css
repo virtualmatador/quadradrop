@@ -23,7 +23,7 @@ button:active { background: #334155; transform: translateY(1px); }
 .cell[data-piece="3"]::after { background: #a78bfa; }
 .cell[data-piece="4"]::after { background: #4ade80; }
 .cell[data-piece="5"]::after { background: #fb7185; }
-.cell[data-piece="6"]::after { background: #60a5fa; }
+.cell[data-piece="6"]::after { background: #2563eb; }
 .cell[data-piece="7"]::after { background: #fb923c; }
 .cell-clearing::after { animation: clear-cell 240ms ease-in both; }
 .cell-moving::after { z-index: 1; animation: move-cell-down 240ms ease-in-out both; }
@@ -87,7 +87,6 @@ button:active { background: #334155; transform: translateY(1px); }
     .panel { align-self: stretch; flex-direction: column; justify-content: center; padding: .4rem; }
     .panel span { font-size: clamp(.55rem, 2.2vw, .8rem); }
     .panel strong { font-size: clamp(.8rem, 3.5vw, 1.15rem); flex: 1; align-self: end; }
-    .next-panel { display: flex; align-items: center; gap: .35rem; }
     .next { width: min(9vh, 100%); margin: 0 auto; }
     .board-wrap {
         grid-column: 1 / -1;

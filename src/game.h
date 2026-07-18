@@ -27,6 +27,7 @@ private:
   FeedUri(const char *,
           std::function<void(const std::vector<unsigned char> &)> &&) override;
   void Setup();
+  void StartNewGame(bool paused);
   void Run();
   void Step();
   void HandleAction(const char *action);
@@ -38,13 +39,13 @@ private:
   bool BeginCleanup();
   void AdvanceCleanup();
   int FindFullRow() const;
-  void SpawnPiece();
-  bool PieceEnteredView() const;
-  void UpdatePreview();
-  void ChooseNextPiece();
+  void SpawnPiece(bool has_previous_piece = true);
+  void ChooseNextPiece(int previous_piece = -1, int earlier_piece = -1);
+  bool ValidNextPiece() const;
   int Level() const;
   int GravityFrames() const;
   bool ValidateData() const;
+  std::string PreviewState(int type, int rotation, int x, int y) const;
   std::string BoardState() const;
   std::string ActiveState() const;
   std::string NextState() const;
@@ -52,7 +53,6 @@ private:
   void PlayAudio(const char *audio);
 
   int frame_ = 0;
-  bool preview_pending_ = false;
   bool run_ = true;
   std::random_device seeder_;
   std::default_random_engine random_{seeder_()};
