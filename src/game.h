@@ -1,7 +1,6 @@
 #ifndef SRC_GAME_H
 #define SRC_GAME_H
 
-#include <array>
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
@@ -42,7 +41,7 @@ private:
   void SpawnPiece();
   bool PieceEnteredView() const;
   void UpdatePreview();
-  int RandomPiece();
+  void ChooseNextPiece();
   int Level() const;
   int GravityFrames() const;
   bool ValidateData() const;
@@ -57,8 +56,6 @@ private:
   bool run_ = true;
   std::random_device seeder_;
   std::default_random_engine random_{seeder_()};
-  std::array<int, 7> bag_{0, 1, 2, 3, 4, 5, 6};
-  std::size_t bag_index_ = bag_.size();
   std::mutex lock_;
   std::condition_variable waiter_;
   std::thread worker_;

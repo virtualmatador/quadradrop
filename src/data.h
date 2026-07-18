@@ -28,6 +28,9 @@ private:
   Board board_{};
   int piece_ = 0;
   int next_piece_ = 0;
+  int next_rotation_ = 0;
+  int next_piece_x_ = 3;
+  int next_piece_y_ = 2;
   int rotation_ = 0;
   int piece_x_ = 3;
   int piece_y_ = 2;

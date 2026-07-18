@@ -63,7 +63,7 @@ main::Game::Game() {
     data_.lines_ = 0;
     data_.paused_ = true;
     data_.game_over_ = false;
-    data_.next_piece_ = RandomPiece();
+    ChooseNextPiece();
     SpawnPiece();
     data_.game_initialized_ = true;
   } else if (!data_.game_over_ && !data_.cleanup_phase_ &&
@@ -150,7 +150,7 @@ void main::Game::HandleAction(const char *action) {
       data_.game_over_ = false;
       data_.cleanup_phase_ = 0;
       data_.cleanup_count_ = 0;
-      data_.next_piece_ = RandomPiece();
+      ChooseNextPiece();
       SpawnPiece();
       changed = true;
     } else if (!data_.paused_ && !data_.game_over_ &&
@@ -296,9 +296,9 @@ void main::Game::AdvanceCleanup() {
 
 void main::Game::SpawnPiece() {
   data_.piece_ = data_.next_piece_;
-  data_.rotation_ = 0;
-  data_.piece_x_ = 3;
-  data_.piece_y_ = hidden_rows_ - 2;
+  data_.rotation_ = data_.next_rotation_;
+  data_.piece_x_ = data_.next_piece_x_;
+  data_.piece_y_ = data_.next_piece_y_;
   preview_pending_ = true;
   frame_ = 0;
   if (!Fits(data_.piece_, data_.rotation_, data_.piece_x_, data_.piece_y_)) {
@@ -316,17 +316,27 @@ bool main::Game::PieceEnteredView() const {
 
 void main::Game::UpdatePreview() {
   if (preview_pending_ && PieceEnteredView()) {
-    data_.next_piece_ = RandomPiece();
+    ChooseNextPiece();
     preview_pending_ = false;
   }
 }
 
-int main::Game::RandomPiece() {
-  if (bag_index_ == bag_.size()) {
-    std::shuffle(bag_.begin(), bag_.end(), random_);
-    bag_index_ = 0;
+void main::Game::ChooseNextPiece() {
+  data_.next_piece_ = std::uniform_int_distribution<int>(0, 6)(random_);
+  data_.next_rotation_ = std::uniform_int_distribution<int>(0, 3)(random_);
+
+  int min_x = 3;
+  int max_x = 0;
+  int max_y = 0;
+  for (const auto &block : shapes[data_.next_piece_][data_.next_rotation_]) {
+    min_x = std::min(min_x, block[0]);
+    max_x = std::max(max_x, block[0]);
+    max_y = std::max(max_y, block[1]);
   }
-  return bag_[bag_index_++];
+
+  data_.next_piece_x_ =
+      std::uniform_int_distribution<int>(3 - min_x, 6 - max_x)(random_);
+  data_.next_piece_y_ = hidden_rows_ - 1 - max_y;
 }
 
 int main::Game::Level() const { return data_.lines_ / 10 + 1; }
@@ -373,8 +383,11 @@ std::string main::Game::ActiveState() const {
 
 std::string main::Game::NextState() const {
   std::string state(16, '0');
-  for (const auto &block : shapes[data_.next_piece_][0])
-    state[block[1] * 4 + block[0]] = static_cast<char>('1' + data_.next_piece_);
+  for (const auto &block : shapes[data_.next_piece_][data_.next_rotation_]) {
+    const int x = data_.next_piece_x_ + block[0] - 3;
+    const int y = data_.next_piece_y_ + block[1] - (hidden_rows_ - 3);
+    state[y * 4 + x] = static_cast<char>('1' + data_.next_piece_);
+  }
   return state;
 }
 
