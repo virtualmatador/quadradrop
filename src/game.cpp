@@ -58,7 +58,7 @@ main::Game::Game() {
   if (data_.game_initialized_)
     data_.paused_ = true;
   if (!ValidateData())
-    StartNewGame(true);
+    StartNewGame();
   bridge::LoadView(index_,
                    static_cast<std::int32_t>(core::VIEW_INFO::ScreenOn) |
                        static_cast<std::int32_t>(core::VIEW_INFO::AudioNoSolo),
@@ -75,11 +75,11 @@ main::Game::~Game() {
     worker_.join();
 }
 
-void main::Game::StartNewGame(bool paused) {
+void main::Game::StartNewGame() {
   data_.board_ = {};
   data_.score_ = 0;
   data_.lines_ = 0;
-  data_.paused_ = paused;
+  data_.paused_ = true;
   data_.game_over_ = false;
   data_.cleanup_phase_ = 0;
   data_.cleanup_row_ = 0;
@@ -146,9 +146,6 @@ void main::Game::HandleAction(const char *action) {
         frame_ = 0;
         changed = true;
       }
-    } else if (std::strcmp(action, "restart") == 0) {
-      StartNewGame(false);
-      changed = true;
     } else if (!data_.paused_ && !data_.game_over_ &&
                !data_.cleanup_phase_) {
       if (std::strcmp(action, "left") == 0) {

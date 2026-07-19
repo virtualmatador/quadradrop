@@ -27,7 +27,7 @@ private:
   FeedUri(const char *,
           std::function<void(const std::vector<unsigned char> &)> &&) override;
   void Setup();
-  void StartNewGame(bool paused);
+  void StartNewGame();
   void Run();
   void Step();
   void HandleAction(const char *action);

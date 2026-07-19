@@ -26,17 +26,20 @@ function setup(showControls) {
   if (!AudioContextClass) return;
   audioContext = new AudioContextClass();
   audioIds.forEach(function(id) {
-    fetch(cross_asset_domain_ + 'wave/' + id + '.wav')
-        .then(function(response) {
-          return response.arrayBuffer();
-        })
-        .then(function(data) {
-          return audioContext.decodeAudioData(data);
-        })
-        .then(function(buffer) {
-          audios[id] = buffer;
-        })
-        .catch(function() {});
+    const request = new XMLHttpRequest();
+    request.open(
+        'GET', cross_asset_domain_ + 'wave/' + id + '.wav',
+        cross_asset_async_);
+    request.responseType = 'arraybuffer';
+    request.onload = function() {
+      audioContext.decodeAudioData(
+          request.response,
+          function(buffer) {
+            audios[id] = buffer;
+          },
+          function() {});
+    };
+    request.send();
   });
 }
 
@@ -92,9 +95,9 @@ function renderGame(
   overlay.hidden = !paused && !gameOver;
   document.getElementById('overlay-title').textContent =
       gameOver ? 'Game Over' : 'Paused';
-  document.getElementById('overlay-help').textContent =
-      gameOver ? 'Press "Restart" to play again' : 'Press "Resume" to continue';
-  document.getElementById('restart').hidden = !gameOver;
+  document.getElementById('overlay-help').textContent = gameOver ?
+      'Return to the menu and "Reset" to play again.' :
+      'Press "Resume" to continue.';
 }
 
 function playAudio(id) {
