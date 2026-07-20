@@ -166,6 +166,9 @@ void main::Game::HandleAction(const char *action) {
         if (changed) {
           ++data_.score_;
           sound = "move";
+        } else {
+          LockPiece();
+          changed = true;
         }
       } else if (std::strcmp(action, "drop") == 0) {
         HardDrop();
@@ -297,6 +300,7 @@ void main::Game::SpawnPiece(bool has_previous_piece) {
   data_.rotation_ = rotation;
   data_.piece_x_ = x;
   data_.piece_y_ = y;
+  ++piece_generation_;
   frame_ = 0;
   if (!Fits(data_.piece_, data_.rotation_, data_.piece_x_, data_.piece_y_)) {
     data_.game_over_ = true;
@@ -422,6 +426,7 @@ void main::Game::Render() {
   int score;
   int lines;
   int level;
+  unsigned int piece_generation;
   bool paused;
   bool game_over;
   {
@@ -434,12 +439,13 @@ void main::Game::Render() {
     score = data_.score_;
     lines = data_.lines_;
     level = Level();
+    piece_generation = piece_generation_;
     paused = data_.paused_;
     game_over = data_.game_over_;
   }
   std::ostringstream js;
   js << "renderGame('" << board << "','" << active << "','" << next << "',"
-     << score << ',' << lines << ',' << level << ','
+     << score << ',' << lines << ',' << level << ',' << piece_generation << ','
      << (paused ? "true" : "false") << ','
      << (game_over ? "true" : "false") << ',' << cleanup_phase << ','
      << cleanup_row << ')';

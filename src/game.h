@@ -53,6 +53,7 @@ private:
   void PlayAudio(const char *audio);
 
   int frame_ = 0;
+  unsigned int piece_generation_ = 0;
   bool run_ = true;
   std::random_device seeder_;
   std::default_random_engine random_{seeder_()};

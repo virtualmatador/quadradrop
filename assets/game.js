@@ -9,6 +9,7 @@ let swipeMoved = false;
 let swipeActions = {x: false, y: false};
 let longPressTimer = null;
 let longPressTriggered = false;
+let renderedPieceGeneration = 0;
 
 const gestureThreshold = 18;
 const longPressDelay = 500;
@@ -59,8 +60,11 @@ function paint(element, state) {
 }
 
 function renderGame(
-    board, active, next, score, lines, level, paused, gameOver, cleanupPhase,
-    cleanupRow) {
+    board, active, next, score, lines, level, pieceGeneration, paused, gameOver,
+    cleanupPhase, cleanupRow) {
+  if (renderedPieceGeneration !== pieceGeneration)
+    pointerCancel();
+  renderedPieceGeneration = pieceGeneration;
   gamePaused = paused;
   const boardElement = document.getElementById('board');
   boardElement.querySelectorAll('.cell-clearing, .cell-moving')
@@ -160,10 +164,12 @@ function pointerMove(event) {
         Infinity;
     if (nextHorizontal <= nextVertical) {
       sendAction(horizontalAction);
+      if (!pointerStart) return;
       ++horizontalDone;
       swipeActions.x = true;
     } else {
       sendAction('down');
+      if (!pointerStart) return;
       ++verticalDone;
       swipeActions.y = true;
     }
@@ -176,6 +182,7 @@ function pointerMove(event) {
 function pointerUp(event) {
   if (!pointerStart) return;
   pointerMove(event);
+  if (!pointerStart) return;
   clearTimeout(longPressTimer);
   longPressTimer = null;
   const dx = event.clientX - pointerStart.x;
