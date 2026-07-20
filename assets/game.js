@@ -7,11 +7,13 @@ let pointerLast = null;
 let swipeRemainder = {x: 0, y: 0};
 let swipeMoved = false;
 let swipeActions = {x: false, y: false};
+let swipeLastActionAt = 0;
 let longPressTimer = null;
 let longPressTriggered = false;
 let renderedPieceGeneration = 0;
 
 const gestureThreshold = 18;
+const releaseMoveDelay = 150;
 const longPressDelay = 500;
 
 function sendAction(action) {
@@ -29,8 +31,7 @@ function setup(showControls) {
   audioIds.forEach(function(id) {
     const request = new XMLHttpRequest();
     request.open(
-        'GET', cross_asset_domain_ + 'wave/' + id + '.wav',
-        cross_asset_async_);
+        'GET', cross_asset_domain_ + 'wave/' + id + '.wav', cross_asset_async_);
     request.responseType = 'arraybuffer';
     request.onload = function() {
       audioContext.decodeAudioData(
@@ -62,8 +63,7 @@ function paint(element, state) {
 function renderGame(
     board, active, next, score, lines, level, pieceGeneration, paused, gameOver,
     cleanupPhase, cleanupRow) {
-  if (renderedPieceGeneration !== pieceGeneration)
-    pointerCancel();
+  if (renderedPieceGeneration !== pieceGeneration) pointerCancel();
   renderedPieceGeneration = pieceGeneration;
   gamePaused = paused;
   const boardElement = document.getElementById('board');
@@ -119,6 +119,7 @@ function pointerDown(event) {
   swipeRemainder = {x: 0, y: 0};
   swipeMoved = false;
   swipeActions = {x: false, y: false};
+  swipeLastActionAt = event.timeStamp;
   longPressTriggered = false;
   event.currentTarget.setPointerCapture(event.pointerId);
   clearTimeout(longPressTimer);
@@ -165,11 +166,13 @@ function pointerMove(event) {
     if (nextHorizontal <= nextVertical) {
       sendAction(horizontalAction);
       if (!pointerStart) return;
+      swipeLastActionAt = event.timeStamp;
       ++horizontalDone;
       swipeActions.x = true;
     } else {
       sendAction('down');
       if (!pointerStart) return;
+      swipeLastActionAt = event.timeStamp;
       ++verticalDone;
       swipeActions.y = true;
     }
@@ -196,9 +199,11 @@ function pointerUp(event) {
         event.clientX < bounds.left + bounds.width / 2 ? 'rotate-left' :
                                                          'rotate-right');
   } else {
-    if (!swipeActions.x && Math.abs(dx) >= gestureThreshold)
-      sendAction(dx < 0 ? 'left' : 'right');
-    if (!swipeActions.y && dy >= gestureThreshold) sendAction('down');
+    if (event.timeStamp - swipeLastActionAt <= releaseMoveDelay) {
+      if (!swipeActions.x && Math.abs(dx) >= gestureThreshold)
+        sendAction(dx < 0 ? 'left' : 'right');
+      if (!swipeActions.y && dy >= gestureThreshold) sendAction('down');
+    }
   }
 }
 
