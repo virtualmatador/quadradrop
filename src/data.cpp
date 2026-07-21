@@ -12,9 +12,7 @@ void main::Data::Load() {
     toolbox::Load("GAME_SCORE", score_, 0, score_max_ + 1);
     toolbox::Load("GAME_LINES", lines_, 0, lines_max_ + 1);
     toolbox::Load("GAME_SOUND", sound_, false, false);
-    // Older saved games predate this preference and should retain their data.
-    if (!bridge::GetPreference("GAME_SHOW_CONTROLS").empty())
-      toolbox::Load("GAME_SHOW_CONTROLS", show_controls_, false, false);
+    toolbox::Load("GAME_SHOW_CONTROLS", show_controls_, false, false);
     toolbox::Load("GAME_INITIALIZED", game_initialized_, false, false);
     if (!game_initialized_)
       return;
@@ -30,8 +28,7 @@ void main::Data::Load() {
     toolbox::Load("GAME_OVER", game_over_, false, false);
     toolbox::Load("GAME_CLEANUP_PHASE", cleanup_phase_, 0, 3);
     toolbox::Load("GAME_CLEANUP_ROW", cleanup_row_, 0, board_height_);
-    toolbox::Load("GAME_CLEANUP_COUNT", cleanup_count_, 0,
-                  board_height_ + 1);
+    toolbox::Load("GAME_CLEANUP_COUNT", cleanup_count_, 0, board_height_ + 1);
     for (int y = 0; y < board_height_; ++y) {
       std::ostringstream key;
       key << "GAME_BOARD_" << y;

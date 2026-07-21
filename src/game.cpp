@@ -146,8 +146,7 @@ void main::Game::HandleAction(const char *action) {
         frame_ = 0;
         changed = true;
       }
-    } else if (!data_.paused_ && !data_.game_over_ &&
-               !data_.cleanup_phase_) {
+    } else if (!data_.paused_ && !data_.game_over_ && !data_.cleanup_phase_) {
       if (std::strcmp(action, "left") == 0) {
         changed = Move(-1, 0);
         sound = changed ? "move" : nullptr;
@@ -269,6 +268,8 @@ void main::Game::AdvanceCleanup() {
   for (int row = data_.cleanup_row_; row > 0; --row)
     data_.board_[row] = data_.board_[row - 1];
   data_.board_[0].fill(0);
+  const int cleanup_level = (data_.lines_ - data_.cleanup_count_) / 10 + 1;
+  data_.score_ += (data_.cleanup_count_ + 1) * 100 * cleanup_level;
   ++data_.cleanup_count_;
   ++data_.lines_;
   const int row = FindFullRow();
@@ -277,15 +278,11 @@ void main::Game::AdvanceCleanup() {
     data_.cleanup_phase_ = 1;
     return;
   }
-  static constexpr int points[] = {0, 100, 300, 500, 800};
-  const int cleared = std::min(data_.cleanup_count_, 4);
-  const int cleanup_level = (data_.lines_ - data_.cleanup_count_) / 10 + 1;
-  data_.score_ += points[cleared] * cleanup_level;
   data_.cleanup_phase_ = 0;
+  if (data_.sound_ && data_.cleanup_count_ > 3)
+    bridge::AsyncMessage(index_, "game", "audio", "win");
   data_.cleanup_count_ = 0;
   SpawnPiece();
-  if (data_.sound_ && cleared == 4)
-    bridge::AsyncMessage(index_, "game", "audio", "win");
 }
 
 void main::Game::SpawnPiece(bool has_previous_piece) {
@@ -321,8 +318,7 @@ void main::Game::ChooseNextPiece(int previous_piece, int earlier_piece) {
   }
 
   int selection = std::uniform_int_distribution<int>(1, 133)(random_);
-  for (data_.next_piece_ = 0; data_.next_piece_ < 6;
-       ++data_.next_piece_) {
+  for (data_.next_piece_ = 0; data_.next_piece_ < 6; ++data_.next_piece_) {
     selection -= weights[data_.next_piece_];
     if (selection <= 0)
       break;
@@ -344,8 +340,7 @@ void main::Game::ChooseNextPiece(int previous_piece, int earlier_piece) {
 }
 
 bool main::Game::ValidNextPiece() const {
-  for (const auto &block :
-       shapes[data_.next_piece_][data_.next_rotation_]) {
+  for (const auto &block : shapes[data_.next_piece_][data_.next_rotation_]) {
     const int x = data_.next_piece_x_ + block[0];
     const int y = data_.next_piece_y_ + block[1];
     if (x < 3 || x > 6 || y < 0 || y > hidden_rows_)
@@ -406,7 +401,7 @@ std::string main::Game::NextState() const {
 }
 
 std::string main::Game::PreviewState(int type, int rotation, int x,
-                                    int y) const {
+                                     int y) const {
   std::string state(16, '0');
   for (const auto &block : shapes[type][rotation]) {
     const int preview_x = x + block[0] - 3;
@@ -446,9 +441,8 @@ void main::Game::Render() {
   std::ostringstream js;
   js << "renderGame('" << board << "','" << active << "','" << next << "',"
      << score << ',' << lines << ',' << level << ',' << piece_generation << ','
-     << (paused ? "true" : "false") << ','
-     << (game_over ? "true" : "false") << ',' << cleanup_phase << ','
-     << cleanup_row << ')';
+     << (paused ? "true" : "false") << ',' << (game_over ? "true" : "false")
+     << ',' << cleanup_phase << ',' << cleanup_row << ')';
   bridge::CallFunction(js.str().c_str());
 }
 
