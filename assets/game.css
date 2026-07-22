@@ -48,6 +48,7 @@ button:active { background: #334155; transform: translateY(1px); }
 
 .sidebar { width: min(32vw, 14rem); display: flex; flex-direction: column; gap: .65rem; }
 .top-actions { align-self: flex-end; display: flex; align-items: center; gap: .4rem; }
+.top-actions button { width: 2.7rem; height: 2.7rem; padding: 0; }
 .back { align-self: flex-end; width: 2.7rem; height: 2.7rem; padding: 0; }
 .panel { display: flex; justify-content: space-between; align-items: baseline; padding: .65rem .8rem; background: #111827; border: 1px solid #273449; border-radius: .7rem; }
 .panel span { color: #94a3b8; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; }

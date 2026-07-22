@@ -93,15 +93,19 @@ function renderGame(
   document.getElementById('score').textContent = score;
   document.getElementById('lines').textContent = lines;
   document.getElementById('level').textContent = level;
-  document.getElementById('pause').textContent = paused ? 'Resume' : 'Pause';
+  const pauseButton = document.getElementById('pause');
+  const pauseButtonLabel = paused ? 'Resume' : 'Pause';
+  pauseButton.textContent = paused ? '\u25b6' : '\u23f8';
+  pauseButton.setAttribute('aria-label', pauseButtonLabel);
+  pauseButton.title = pauseButtonLabel;
 
   const overlay = document.getElementById('overlay');
   overlay.hidden = !paused && !gameOver;
   document.getElementById('overlay-title').textContent =
       gameOver ? 'Game Over' : 'Paused';
   document.getElementById('overlay-help').textContent = gameOver ?
-      'Return to the menu and "Reset" to play again.' :
-      'Press "Resume" to continue.';
+      'Return to the menu and reset to play again.' :
+      'Press resume button to continue.';
 }
 
 function playAudio(id) {
