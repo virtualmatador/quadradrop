@@ -95,6 +95,7 @@ function renderGame(
   document.getElementById('level').textContent = level;
   const pauseButton = document.getElementById('pause');
   const pauseButtonLabel = paused ? 'Resume' : 'Pause';
+  pauseButton.hidden = gameOver;
   pauseButton.textContent = paused ? '\u25b6' : '\u23f8';
   pauseButton.setAttribute('aria-label', pauseButtonLabel);
   pauseButton.title = pauseButtonLabel;
