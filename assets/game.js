@@ -26,22 +26,30 @@ function setup(showControls) {
   document.getElementById('controls').hidden = !showControls;
 
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return;
-  audioContext = new AudioContextClass();
-  audioIds.forEach(function(id) {
-    const request = new XMLHttpRequest();
-    request.open(
-        'GET', cross_asset_domain_ + 'wave/' + id + '.wav', cross_asset_async_);
-    request.responseType = 'arraybuffer';
-    request.onload = function() {
-      audioContext.decodeAudioData(
-          request.response,
-          function(buffer) {
-            audios[id] = buffer;
-          },
-          function() {});
-    };
-    request.send();
+  if (AudioContextClass) audioContext = new AudioContextClass();
+  const loads = audioIds.map(function(id) {
+    if (!audioContext) return Promise.reject();
+    return new Promise(function(resolve, reject) {
+      const request = new XMLHttpRequest();
+      request.open(
+          'GET', cross_asset_domain_ + 'wave/' + id + '.wav',
+          cross_asset_async_);
+      request.responseType = 'arraybuffer';
+      request.onload = function() {
+        audioContext.decodeAudioData(
+            request.response,
+            function(buffer) {
+              audios[id] = buffer;
+              resolve();
+            },
+            reject);
+      };
+      request.onerror = reject;
+      request.send();
+    });
+  });
+  Promise.allSettled(loads).then(function() {
+    CallHandler('body', 'setup', '');
   });
 }
 

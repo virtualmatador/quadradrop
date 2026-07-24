@@ -43,6 +43,10 @@ main::Game::Game() {
   handlers_["body"] = [this](const char *command, const char *) {
     if (std::strcmp(command, "ready") == 0)
       Setup();
+    else if (std::strcmp(command, "setup") == 0) {
+      Render();
+      Run();
+    }
     else if (std::strcmp(command, "back") == 0)
       Escape();
   };
@@ -93,8 +97,6 @@ void main::Game::Setup() {
   std::ostringstream js;
   js << "setup(" << (data_.show_controls_ ? "true" : "false") << ")";
   bridge::CallFunction(js.str().c_str());
-  Render();
-  Run();
 }
 
 void main::Game::Run() {
