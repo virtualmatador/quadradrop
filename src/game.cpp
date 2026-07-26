@@ -131,8 +131,12 @@ void main::Game::Run() {
 }
 
 void main::Game::Step() {
-  if (!Move(0, 1))
+  if (!Move(0, 1)) {
     LockPiece();
+    if (data_.sound_)
+      bridge::AsyncMessage(index_, "game", "audio",
+                           data_.game_over_ ? "die" : "lock");
+  }
 }
 
 void main::Game::HandleAction(const char *action) {
@@ -169,10 +173,12 @@ void main::Game::HandleAction(const char *action) {
           sound = "move";
         } else {
           LockPiece();
+          sound = data_.game_over_ ? "die" : "lock";
           changed = true;
         }
       } else if (std::strcmp(action, "drop") == 0) {
         HardDrop();
+        sound = data_.game_over_ ? "die" : "lock";
         changed = true;
       }
     }
@@ -184,7 +190,7 @@ void main::Game::HandleAction(const char *action) {
   if (changed)
     Render();
   if (sound && data_.sound_)
-    bridge::AsyncMessage(index_, "game", "audio", sound);
+    PlayAudio(sound);
 }
 
 bool main::Game::Fits(int type, int rotation, int x, int y) const {
@@ -234,9 +240,6 @@ void main::Game::LockPiece() {
   }
   if (!BeginCleanup())
     SpawnPiece();
-  if (data_.sound_)
-    bridge::AsyncMessage(index_, "game", "audio",
-                         data_.game_over_ ? "die" : "lock");
 }
 
 int main::Game::FindFullRow() const {
