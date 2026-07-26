@@ -1,4 +1,4 @@
-const audioIds = ['move', 'food', 'turn', 'lock', 'win', 'die'];
+const audioIds = ['move', 'step', 'food', 'turn', 'lock', 'win', 'die'];
 const audios = {};
 let audioContext;
 let gamePaused = false;

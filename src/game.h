@@ -29,7 +29,7 @@ private:
   void Setup();
   void StartNewGame();
   void Run();
-  void Step();
+  const char *Step();
   void HandleAction(const char *action);
   bool Fits(int type, int rotation, int x, int y) const;
   bool Move(int dx, int dy);

@@ -123,20 +123,21 @@ void main::Game::Run() {
       }
       if (++frame_ >= GravityFrames()) {
         frame_ = 0;
-        Step();
+        const char *sound = Step();
+        if (data_.sound_)
+          bridge::AsyncMessage(index_, "game", "audio", sound);
         bridge::AsyncMessage(index_, "game", "render", "");
       }
     }
   });
 }
 
-void main::Game::Step() {
+const char *main::Game::Step() {
   if (!Move(0, 1)) {
     LockPiece();
-    if (data_.sound_)
-      bridge::AsyncMessage(index_, "game", "audio",
-                           data_.game_over_ ? "die" : "lock");
+    return data_.game_over_ ? "die" : "lock";
   }
+  return "step";
 }
 
 void main::Game::HandleAction(const char *action) {
@@ -176,10 +177,12 @@ void main::Game::HandleAction(const char *action) {
           sound = data_.game_over_ ? "die" : "lock";
           changed = true;
         }
+        frame_ = 0;
       } else if (std::strcmp(action, "drop") == 0) {
         HardDrop();
         sound = data_.game_over_ ? "die" : "lock";
         changed = true;
+        frame_ = 0;
       }
     }
   }
