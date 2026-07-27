@@ -46,8 +46,7 @@ main::Game::Game() {
     else if (std::strcmp(command, "setup") == 0) {
       Render();
       Run();
-    }
-    else if (std::strcmp(command, "back") == 0)
+    } else if (std::strcmp(command, "back") == 0)
       Escape();
   };
   handlers_["game"] = [this](const char *command, const char *info) {
@@ -217,13 +216,10 @@ bool main::Game::Move(int dx, int dy) {
 }
 
 bool main::Game::Rotate(int direction) {
-  const int next = (data_.rotation_ + direction + 4) % 4;
-  for (int kick : {0, -1, 1, -2, 2}) {
-    if (Fits(data_.piece_, next, data_.piece_x_ + kick, data_.piece_y_)) {
-      data_.rotation_ = next;
-      data_.piece_x_ += kick;
-      return true;
-    }
+  const int rotation = (data_.rotation_ + direction + 4) % 4;
+  if (Fits(data_.piece_, rotation, data_.piece_x_, data_.piece_y_)) {
+    data_.rotation_ = rotation;
+    return true;
   }
   return false;
 }
