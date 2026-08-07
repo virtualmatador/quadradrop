@@ -62,10 +62,9 @@ main::Game::Game() {
     data_.paused_ = true;
   if (!ValidateData())
     StartNewGame();
-  bridge::LoadView(index_,
-                   static_cast<std::int32_t>(core::VIEW_INFO::ScreenOn) |
-                       static_cast<std::int32_t>(core::VIEW_INFO::AudioNoSolo),
-                   "game");
+  bridge::SetAudioNoSolo(true);
+  bridge::SetLayout(true, false);
+  bridge::LoadView(index_, "game");
 }
 
 main::Game::~Game() {
@@ -76,6 +75,8 @@ main::Game::~Game() {
   waiter_.notify_all();
   if (worker_.joinable())
     worker_.join();
+  if (screen_on_)
+    bridge::SetScreenOn(false);
 }
 
 void main::Game::StartNewGame() {
@@ -428,6 +429,8 @@ void main::Game::Render() {
   unsigned int piece_generation;
   bool paused;
   bool game_over;
+  bool screen_on;
+  bool update_screen_on;
   {
     std::lock_guard<std::mutex> guard(lock_);
     board = BoardState();
@@ -441,7 +444,12 @@ void main::Game::Render() {
     piece_generation = piece_generation_;
     paused = data_.paused_;
     game_over = data_.game_over_;
+    screen_on = !paused && !game_over;
+    update_screen_on = screen_on_ != screen_on;
+    screen_on_ = screen_on;
   }
+  if (update_screen_on)
+    bridge::SetScreenOn(screen_on);
   std::ostringstream js;
   js << "renderGame('" << board << "','" << active << "','" << next << "',"
      << score << ',' << lines << ',' << level << ',' << piece_generation << ','

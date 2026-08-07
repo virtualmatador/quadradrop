@@ -79,7 +79,9 @@ main::Menu::Menu() {
         data_.show_controls_ = false;
     }
   };
-  bridge::LoadView(index_, (std::int32_t)core::VIEW_INFO::AudioNoSolo, "menu");
+  bridge::SetAudioNoSolo(true);
+  bridge::SetLayout(false, false);
+  bridge::LoadView(index_, "menu");
 }
 
 main::Menu::~Menu() {}
