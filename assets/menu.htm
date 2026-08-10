@@ -17,11 +17,6 @@
             </td>
         </tr>
         <tr>
-            <td colspan="2">
-                <button onclick="play()">Play</button>
-            </td>
-        </tr>
-        <tr>
             <td class="key">
                 Lines:
             </td>
@@ -47,7 +42,7 @@
         </tr>
         <tr>
             <td colspan="2">
-                <button onclick="reset()">Reset</button>
+                <button onclick="play()">Play</button>
             </td>
         </tr>
         <tr>
@@ -57,13 +52,25 @@
         </tr>
         <tr>
             <td colspan="2">
-                <input id="sound" type="checkbox" onclick="sound()"><label for="sound">Sound</label>
+                <input id="action-sound" type="checkbox" onclick="actionSound()"><label for="action-sound">Action
+                    Sound</label>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <input id="step-sound" type="checkbox" onclick="stepSound()"><label for="step-sound">Step
+                    Sound</label>
             </td>
         </tr>
         <tr>
             <td colspan="2">
                 <input id="show-controls" type="checkbox" onclick="showControls()"><label for="show-controls">Show
                     Controls</label>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <button onclick="reset()">Reset</button>
             </td>
         </tr>
     </table>

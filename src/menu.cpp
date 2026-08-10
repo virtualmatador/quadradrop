@@ -35,7 +35,11 @@ main::Menu::Menu() {
       bridge::CallFunction(js.str().c_str());
       js.str("");
       js.clear();
-      js << "setSound(" << data_.sound_ << ")";
+      js << "setActionSound(" << data_.action_sound_ << ")";
+      bridge::CallFunction(js.str().c_str());
+      js.str("");
+      js.clear();
+      js << "setStepSound(" << data_.step_sound_ << ")";
       bridge::CallFunction(js.str().c_str());
       js.str("");
       js.clear();
@@ -55,16 +59,28 @@ main::Menu::Menu() {
     else if (std::strcmp(command, "click") == 0)
       Reset();
   };
-  handlers_["sound"] = [&](const char *command, const char *info) {
+  handlers_["action-sound"] = [&](const char *command, const char *info) {
     if (std::strlen(command) == 0)
       return;
     else if (std::strcmp(command, "click") == 0) {
       if (std::strlen(info) == 0)
         return;
       else if (std::strcmp(info, "true") == 0)
-        data_.sound_ = true;
+        data_.action_sound_ = true;
       else if (std::strcmp(info, "false") == 0)
-        data_.sound_ = false;
+        data_.action_sound_ = false;
+    }
+  };
+  handlers_["step-sound"] = [&](const char *command, const char *info) {
+    if (std::strlen(command) == 0)
+      return;
+    else if (std::strcmp(command, "click") == 0) {
+      if (std::strlen(info) == 0)
+        return;
+      else if (std::strcmp(info, "true") == 0)
+        data_.step_sound_ = true;
+      else if (std::strcmp(info, "false") == 0)
+        data_.step_sound_ = false;
     }
   };
   handlers_["show-controls"] = [&](const char *command, const char *info) {

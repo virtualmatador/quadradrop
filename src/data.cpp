@@ -11,7 +11,8 @@ void main::Data::Load() {
   try {
     toolbox::Load("GAME_SCORE", score_, 0, score_max_ + 1);
     toolbox::Load("GAME_LINES", lines_, 0, lines_max_ + 1);
-    toolbox::Load("GAME_SOUND", sound_, false, false);
+    toolbox::Load("GAME_ACTION_SOUND", action_sound_, false, false);
+    toolbox::Load("GAME_STEP_SOUND", step_sound_, false, false);
     toolbox::Load("GAME_SHOW_CONTROLS", show_controls_, false, false);
     toolbox::Load("GAME_INITIALIZED", game_initialized_, false, false);
     if (!game_initialized_)
@@ -49,7 +50,8 @@ void main::Data::Load() {
 void main::Data::Save() {
   toolbox::Save("GAME_SCORE", score_);
   toolbox::Save("GAME_LINES", lines_);
-  toolbox::Save("GAME_SOUND", sound_);
+  toolbox::Save("GAME_ACTION_SOUND", action_sound_);
+  toolbox::Save("GAME_STEP_SOUND", step_sound_);
   toolbox::Save("GAME_SHOW_CONTROLS", show_controls_);
   toolbox::Save("GAME_INITIALIZED", game_initialized_);
   if (!game_initialized_)
@@ -81,7 +83,8 @@ void main::Data::Save() {
 void main::Data::Reset() {
   score_ = 0;
   lines_ = 0;
-  sound_ = true;
+  action_sound_ = true;
+  step_sound_ = true;
   show_controls_ = true;
   game_initialized_ = false;
   board_ = {};

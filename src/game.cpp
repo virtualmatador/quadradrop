@@ -124,7 +124,9 @@ void main::Game::Run() {
       if (++frame_ >= GravityFrames()) {
         frame_ = 0;
         const char *sound = Step();
-        if (data_.sound_)
+        const bool is_step_sound = std::strcmp(sound, "step") == 0;
+        if ((is_step_sound && data_.step_sound_) ||
+            (!is_step_sound && data_.action_sound_))
           bridge::AsyncMessage(index_, "game", "audio", sound);
         bridge::AsyncMessage(index_, "game", "render", "");
       }
@@ -192,7 +194,7 @@ void main::Game::HandleAction(const char *action) {
   }
   if (changed)
     Render();
-  if (sound && data_.sound_)
+  if (sound && data_.action_sound_)
     PlayAudio(sound);
 }
 
@@ -266,7 +268,7 @@ void main::Game::AdvanceCleanup() {
   if (data_.cleanup_phase_ == 1) {
     data_.board_[data_.cleanup_row_].fill(0);
     data_.cleanup_phase_ = 2;
-    if (data_.sound_)
+    if (data_.action_sound_)
       bridge::AsyncMessage(index_, "game", "audio", "food");
     return;
   }
@@ -284,7 +286,7 @@ void main::Game::AdvanceCleanup() {
     return;
   }
   data_.cleanup_phase_ = 0;
-  if (data_.sound_ && data_.cleanup_count_ > 3)
+  if (data_.action_sound_ && data_.cleanup_count_ > 3)
     bridge::AsyncMessage(index_, "game", "audio", "win");
   data_.cleanup_count_ = 0;
   SpawnPiece();

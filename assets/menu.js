@@ -23,14 +23,24 @@ function setScore(score)
     document.getElementById("score").innerText = score;
 }
 
-function setSound(sound)
+function setActionSound(sound)
 {
-    document.getElementById("sound").checked = sound;
+    document.getElementById("action-sound").checked = sound;
 }
 
-function sound()
+function actionSound()
 {
-    CallHandler("sound", "click", document.getElementById("sound").checked.toString());
+    CallHandler("action-sound", "click", document.getElementById("action-sound").checked.toString());
+}
+
+function setStepSound(sound)
+{
+    document.getElementById("step-sound").checked = sound;
+}
+
+function stepSound()
+{
+    CallHandler("step-sound", "click", document.getElementById("step-sound").checked.toString());
 }
 
 function setShowControls(show)

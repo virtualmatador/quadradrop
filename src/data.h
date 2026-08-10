@@ -22,7 +22,8 @@ private:
   static constexpr int lines_max_ = 1000000;
   int score_ = 0;
   int lines_ = 0;
-  bool sound_ = true;
+  bool action_sound_ = true;
+  bool step_sound_ = true;
   bool show_controls_ = true;
   bool game_initialized_ = false;
   Board board_{};
