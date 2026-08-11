@@ -78,7 +78,7 @@ void main::Data::Load() {
     toolbox::Load("GAME_PIECE", piece_, 0, 7);
     toolbox::Load("GAME_NEXT_PIECE", next_piece_, 0, 7);
     toolbox::Load("GAME_NEXT_ROTATION", next_rotation_, 0, 4);
-    toolbox::Load("GAME_NEXT_PIECE_X", next_piece_x_, 1, 5);
+    toolbox::Load("GAME_NEXT_PIECE_X", next_piece_x_, 1, 6);
     toolbox::Load("GAME_NEXT_PIECE_Y", next_piece_y_, 1, 4);
     toolbox::Load("GAME_ROTATION", rotation_, 0, 4);
     toolbox::Load("GAME_PIECE_X", piece_x_, -2, board_width_);
