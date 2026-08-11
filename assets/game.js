@@ -210,7 +210,6 @@ function renderGame(
         (quadras <= 0 ? 'No Quadras available' :
                        'Explode using one Quadra (E or swipe up)')));
   const animatedStatistics = [];
-  if (rowResolved) animatedStatistics.push('lines');
   if (levelChanged) animatedStatistics.push('level');
   if (enteredWin || explosionAccepted) animatedStatistics.push('quadras');
   animateStatistics(animatedStatistics);
@@ -357,7 +356,7 @@ document.addEventListener('keydown', function(event) {
     KeyZ: 'rotate-left',
     KeyX: 'rotate-right',
     KeyE: 'explode',
-    Space: 'drop',
+    KeyD: 'drop',
     Escape: 'back'
   };
   let action = actions[event.code];

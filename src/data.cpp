@@ -2,54 +2,35 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
+#include <limits>
 #include <sstream>
 
 #include "bridge.h"
 #include "toolbox.hpp"
 
 namespace {
-constexpr std::array<int, 41> FibonacciThresholds() {
-  std::array<int, 41> thresholds{};
-  int previous_delta = 2;
-  int delta = 3;
-  int total = 0;
-  for (std::size_t index = 0; index < thresholds.size(); ++index) {
-    total += delta;
-    thresholds[index] = total;
-    const int next_delta = previous_delta + delta;
-    previous_delta = delta;
-    delta = next_delta;
-  }
-  return thresholds;
+constexpr std::int64_t LevelThreshold(int level) {
+  if (level <= 1)
+    return 0;
+  const auto value = static_cast<std::int64_t>(level);
+  return (3 * value * value - 5 * value + 4) / 2;
 }
 
-constexpr auto level_thresholds = FibonacciThresholds();
-
-constexpr int FibonacciLevel(int lines) {
-  std::size_t first = 0;
-  std::size_t last = level_thresholds.size();
-  while (first < last) {
-    const std::size_t middle = first + (last - first) / 2;
-    if (lines < level_thresholds[middle])
-      last = middle;
+constexpr int QuadraticLevel(int lines) {
+  constexpr int search_limit = 1 << 16;
+  int first = 1;
+  int last = search_limit;
+  while (first + 1 < last) {
+    const int middle = first + (last - first) / 2;
+    if (LevelThreshold(middle) <= lines)
+      first = middle;
     else
-      first = middle + 1;
+      last = middle;
   }
-  return static_cast<int>(first) + 1;
+  return first;
 }
 
-static_assert(level_thresholds.back() == 1836311898);
-static_assert(level_thresholds[1] - level_thresholds[0] > 4);
-static_assert(FibonacciLevel(0) == 1);
-static_assert(FibonacciLevel(1) == 1);
-static_assert(FibonacciLevel(2) == 1);
-static_assert(FibonacciLevel(3) == 2);
-static_assert(FibonacciLevel(7) == 2);
-static_assert(FibonacciLevel(8) == 3);
-static_assert(FibonacciLevel(15) == 3);
-static_assert(FibonacciLevel(16) == 4);
-static_assert(FibonacciLevel(28) == 4);
-static_assert(FibonacciLevel(29) == 5);
 } // namespace
 
 const int main::Data::shapes_[7][4][4][2] = {
@@ -84,7 +65,7 @@ const int main::Data::shapes_[7][4][4][2] = {
 
 main::Data main::data_;
 
-int main::Data::Level() const { return FibonacciLevel(lines_); }
+int main::Data::Level() const { return QuadraticLevel(lines_); }
 
 void main::Data::Load() {
   try {
