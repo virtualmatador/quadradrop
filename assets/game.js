@@ -262,12 +262,6 @@ function pointerMove(event) {
   const dy = event.clientY - pointerStart.y;
   const moveX = event.clientX - pointerLast.x;
   const moveY = event.clientY - pointerLast.y;
-  if (!swipeActions.x && !swipeActions.y && dy <= -gestureThreshold &&
-      -dy > Math.abs(dx)) {
-    pointerCancel();
-    sendAction('explode');
-    return;
-  }
   pointerLast = {x: event.clientX, y: event.clientY};
   swipeRemainder.x += moveX;
   swipeRemainder.y = Math.max(0, swipeRemainder.y + moveY);
@@ -316,17 +310,24 @@ function pointerMove(event) {
 
 function pointerUp(event) {
   if (!pointerStart) return;
+  const dx = event.clientX - pointerStart.x;
+  const dy = event.clientY - pointerStart.y;
+  const bounds = event.currentTarget.getBoundingClientRect();
+  if (!longPressTriggered && !swipeActions.x && !swipeActions.y &&
+      -dy >= gestureThreshold && -dy > bounds.height / 20 &&
+      -dy > Math.abs(dx)) {
+    pointerCancel();
+    sendAction('explode');
+    return;
+  }
   pointerMove(event);
   if (!pointerStart) return;
   clearTimeout(longPressTimer);
   longPressTimer = null;
-  const dx = event.clientX - pointerStart.x;
-  const dy = event.clientY - pointerStart.y;
   pointerStart = null;
   pointerLast = null;
   if (longPressTriggered) return;
   if (!swipeMoved) {
-    const bounds = event.currentTarget.getBoundingClientRect();
     sendAction(
         event.clientX < bounds.left + bounds.width / 2 ? 'rotate-left' :
                                                          'rotate-right');
