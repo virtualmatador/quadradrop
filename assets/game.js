@@ -1,4 +1,6 @@
-const audioIds = ['move', 'step', 'food', 'turn', 'lock', 'win', 'die'];
+const audioIds = [
+  'move', 'step', 'food', 'turn', 'lock', 'explode', 'level', 'win', 'die'
+];
 const audios = {};
 let audioContext;
 let gamePaused = false;
@@ -11,10 +13,19 @@ let swipeLastActionAt = 0;
 let longPressTimer = null;
 let longPressTriggered = false;
 let renderedPieceGeneration = 0;
+let renderedCleanupPhase = null;
+let renderedCleanupCount = 0;
+let renderedPaused = null;
 
 const gestureThreshold = 18;
 const releaseMoveDelay = 150;
 const longPressDelay = 500;
+const cleanupPlaying = 0;
+const cleanupClearing = 2;
+const cleanupLevelChange = 3;
+const cleanupWin = 4;
+const cleanupExplode = 5;
+const cleanupExploding = 6;
 
 function sendAction(action) {
   CallHandler('game', 'action', action);
@@ -68,32 +79,120 @@ function paint(element, state) {
     element.children[i].dataset.piece = state[i];
 }
 
+function animateStatistics(ids) {
+  const panels = ids.map(function(id) {
+    return document.getElementById(id).parentElement;
+  });
+  panels.forEach(function(panel) {
+    panel.classList.remove('statistic-changing');
+  });
+  if (panels.length) void panels[0].offsetWidth;
+  panels.forEach(function(panel) {
+    panel.classList.add('statistic-changing');
+  });
+}
+
+function parseExplosionMoves(state) {
+  if (!state) return [];
+  return state.split(';').map(function(move) {
+    const cells = move.split(',').map(Number);
+    if (cells.length !== 2 || !Number.isInteger(cells[0]) ||
+        !Number.isInteger(cells[1]) || cells[0] < 0 || cells[0] >= 240 ||
+        cells[1] < 0 || cells[1] >= 240)
+      return null;
+    return cells;
+  }).filter(function(move) {
+    return move !== null;
+  });
+}
+
+function animateExplosion(board, moves) {
+  const first = board.children[0].getBoundingClientRect();
+  const nextColumn = board.children[1].getBoundingClientRect();
+  const nextRow = board.children[10].getBoundingClientRect();
+  const columnStep = nextColumn.left - first.left;
+  const rowStep = nextRow.top - first.top;
+  moves.forEach(function(move) {
+    const source = move[0];
+    const target = move[1];
+    const visibleTarget = target - 40;
+    if (visibleTarget < 0 || visibleTarget >= 200) return;
+    const sourceColumn = source % 10;
+    const sourceRow = Math.floor(source / 10);
+    const targetColumn = target % 10;
+    const targetRow = Math.floor(target / 10);
+    const cell = board.children[visibleTarget];
+    cell.style.setProperty(
+        '--explode-x', (sourceColumn - targetColumn) * columnStep + 'px');
+    cell.style.setProperty(
+        '--explode-y', (sourceRow - targetRow) * rowStep + 'px');
+    cell.classList.add('cell-exploding');
+  });
+}
+
 function renderGame(
-    board, active, next, score, lines, level, pieceGeneration, paused, gameOver,
-    cleanupPhase, cleanupRow) {
+    board, active, next, score, lines, level, quadras, pieceGeneration, paused,
+    gameOver, cleanupPhase, cleanupRow, cleanupCount, explosionState) {
+  const explosionMoves = parseExplosionMoves(explosionState);
+  const hasCleanupState = renderedCleanupPhase !== null;
+  const rowResolved = hasCleanupState &&
+      (cleanupCount > renderedCleanupCount ||
+       (renderedCleanupPhase === cleanupClearing &&
+        cleanupPhase !== cleanupClearing));
+  const levelChanged = rowResolved && cleanupPhase === cleanupLevelChange;
+  const enteredWin = hasCleanupState && cleanupPhase === cleanupWin &&
+      renderedCleanupPhase !== cleanupWin;
+  const resumedExplosion = cleanupPhase === cleanupExploding &&
+      renderedCleanupPhase === cleanupExploding && renderedPaused && !paused;
+  const explosionStarted = cleanupPhase === cleanupExploding &&
+      explosionMoves.length > 0 &&
+      (renderedCleanupPhase !== cleanupExploding || resumedExplosion);
+  const explosionAccepted =
+      (hasCleanupState && cleanupPhase === cleanupExplode &&
+       renderedCleanupPhase !== cleanupExplode) ||
+      (cleanupPhase === cleanupExploding && explosionMoves.length > 0 &&
+       renderedCleanupPhase !== cleanupExplode &&
+       renderedCleanupPhase !== cleanupExploding);
+  renderedCleanupPhase = cleanupPhase;
+  renderedCleanupCount = cleanupCount;
+  renderedPaused = paused;
+
   if (renderedPieceGeneration !== pieceGeneration) pointerCancel();
   renderedPieceGeneration = pieceGeneration;
   gamePaused = paused;
   const boardElement = document.getElementById('board');
-  boardElement.querySelectorAll('.cell-clearing, .cell-moving')
-      .forEach(function(cell) {
-        cell.classList.remove('cell-clearing', 'cell-moving');
-      });
+  const animatedCells =
+      boardElement.querySelectorAll('.cell-clearing, .cell-moving');
+  animatedCells.forEach(function(cell) {
+    cell.classList.remove('cell-clearing', 'cell-moving');
+  });
+  const previousExplosionCells =
+      boardElement.querySelectorAll('.cell-exploding');
+  if (cleanupPhase !== cleanupExploding || explosionStarted) {
+    previousExplosionCells.forEach(function(cell) {
+      cell.classList.remove('cell-exploding');
+      cell.style.removeProperty('--explode-x');
+      cell.style.removeProperty('--explode-y');
+    });
+  }
+  if (animatedCells.length ||
+      ((cleanupPhase !== cleanupExploding || explosionStarted) &&
+       previousExplosionCells.length))
+    void boardElement.offsetWidth;
   paint(boardElement, board);
   for (let i = 0; i < active.length; ++i)
     boardElement.children[i].classList.toggle('cell-active', active[i] === '1');
-  if (cleanupRow >= 0 && cleanupRow < 20) {
-    if (cleanupPhase === 1) {
+  if (explosionStarted) animateExplosion(boardElement, explosionMoves);
+  if (cleanupPhase === cleanupClearing &&
+      cleanupRow >= 0 && cleanupRow < 20) {
+    for (let column = 0; column < 10; ++column) {
+      boardElement.children[cleanupRow * 10 + column].classList.add(
+          'cell-clearing');
+    }
+    for (let row = 0; row < cleanupRow; ++row) {
       for (let column = 0; column < 10; ++column) {
-        boardElement.children[cleanupRow * 10 + column].classList.add(
-            'cell-clearing');
-      }
-    } else if (cleanupPhase === 2) {
-      for (let row = 0; row < cleanupRow; ++row) {
-        for (let column = 0; column < 10; ++column) {
-          const cell = boardElement.children[row * 10 + column];
-          if (cell.dataset.piece !== '0') cell.classList.add('cell-moving');
-        }
+        const cell = boardElement.children[row * 10 + column];
+        if (cell.dataset.piece !== '0') cell.classList.add('cell-moving');
       }
     }
   }
@@ -101,6 +200,20 @@ function renderGame(
   document.getElementById('score').textContent = score;
   document.getElementById('lines').textContent = lines;
   document.getElementById('level').textContent = level;
+  document.getElementById('quadras').textContent = quadras;
+  const explodeButton = document.getElementById('explode');
+  explodeButton.disabled = quadras <= 0 || paused || gameOver ||
+      cleanupPhase !== cleanupPlaying;
+  explodeButton.title = gameOver ? 'Game over' :
+      (paused ? 'Resume to explode' :
+       (cleanupPhase !== cleanupPlaying ? 'Wait for cleanup to finish' :
+        (quadras <= 0 ? 'No Quadras available' :
+                       'Explode using one Quadra (E or swipe up)')));
+  const animatedStatistics = [];
+  if (rowResolved) animatedStatistics.push('lines');
+  if (levelChanged) animatedStatistics.push('level');
+  if (enteredWin || explosionAccepted) animatedStatistics.push('quadras');
+  animateStatistics(animatedStatistics);
   const pauseButton = document.getElementById('pause');
   const pauseButtonLabel = paused ? 'Resume' : 'Pause';
   pauseButton.hidden = gameOver;
@@ -112,9 +225,10 @@ function renderGame(
   overlay.hidden = !paused && !gameOver;
   document.getElementById('overlay-title').textContent =
       gameOver ? 'Game Over' : 'Paused';
-  document.getElementById('overlay-help').textContent = gameOver ?
-      'Return to the menu and reset to play again.' :
+  document.getElementById('overlay-help').hidden = gameOver;
+  document.getElementById('overlay-help').textContent =
       'Press resume button to continue.';
+  document.getElementById('restart').hidden = !gameOver;
 }
 
 function playAudio(id) {
@@ -149,6 +263,12 @@ function pointerMove(event) {
   const dy = event.clientY - pointerStart.y;
   const moveX = event.clientX - pointerLast.x;
   const moveY = event.clientY - pointerLast.y;
+  if (!swipeActions.x && !swipeActions.y && dy <= -gestureThreshold &&
+      -dy > Math.abs(dx)) {
+    pointerCancel();
+    sendAction('explode');
+    return;
+  }
   pointerLast = {x: event.clientX, y: event.clientY};
   swipeRemainder.x += moveX;
   swipeRemainder.y = Math.max(0, swipeRemainder.y + moveY);
@@ -234,10 +354,14 @@ document.addEventListener('keydown', function(event) {
     ArrowRight: 'right',
     ArrowDown: 'down',
     ArrowUp: 'rotate',
+    KeyZ: 'rotate-left',
+    KeyX: 'rotate-right',
+    KeyE: 'explode',
     Space: 'drop',
     Escape: 'back'
   };
   let action = actions[event.code];
+  if (action === 'explode' && event.repeat) return;
   if ((event.code === 'KeyP' && !gamePaused) ||
       (event.code === 'KeyR' && gamePaused))
     action = 'pause';

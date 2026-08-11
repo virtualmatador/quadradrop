@@ -23,7 +23,7 @@ main::Menu::Menu() {
       std::ostringstream js;
       js.str("");
       js.clear();
-      js << "setLevel(" << data_.lines_ / 10 + 1 << ")";
+      js << "setLevel(" << data_.Level() << ")";
       bridge::CallFunction(js.str().c_str());
       js.str("");
       js.clear();
@@ -32,6 +32,10 @@ main::Menu::Menu() {
       js.str("");
       js.clear();
       js << "setScore(" << data_.score_ << ")";
+      bridge::CallFunction(js.str().c_str());
+      js.str("");
+      js.clear();
+      js << "setQuadras(" << data_.quadras_ << ")";
       bridge::CallFunction(js.str().c_str());
       js.str("");
       js.clear();
@@ -95,12 +99,15 @@ main::Menu::Menu() {
         data_.show_controls_ = false;
     }
   };
-  bridge::SetAudioNoSolo(true);
-  bridge::SetLayout(false, false);
-  bridge::LoadView(index_, "menu");
 }
 
 main::Menu::~Menu() {}
+
+void main::Menu::Attach() {
+  bridge::SetAudioNoSolo(true);
+  bridge::SetLayout(false, false);
+  bridge::LoadView(Index(), "menu");
+}
 
 void main::Menu::FeedUri(
     const char *uri,
@@ -110,10 +117,10 @@ void main::Menu::Escape() { bridge::Exit(); }
 
 void main::Menu::Play() {
   progress_ = PROGRESS::GAME;
-  bridge::NeedRestart();
+  RequestStage();
 }
 
 void main::Menu::Reset() {
   data_.Reset();
-  bridge::NeedRestart();
+  RequestStage();
 }

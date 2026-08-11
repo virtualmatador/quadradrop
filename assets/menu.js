@@ -23,6 +23,11 @@ function setScore(score)
     document.getElementById("score").innerText = score;
 }
 
+function setQuadras(quadras)
+{
+    document.getElementById("quadras").innerText = quadras;
+}
+
 function setActionSound(sound)
 {
     document.getElementById("action-sound").checked = sound;

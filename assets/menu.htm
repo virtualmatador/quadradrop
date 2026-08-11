@@ -41,6 +41,14 @@
             </td>
         </tr>
         <tr>
+            <td class="key">
+                Quadras:
+            </td>
+            <td>
+                <div id="quadras">0</div>
+            </td>
+        </tr>
+        <tr>
             <td colspan="2">
                 <button onclick="play()">Play</button>
             </td>
@@ -48,24 +56,24 @@
         <tr>
             <td colspan="2" class="title">
                 Options
-            </td colspan="2">
-        </tr>
-        <tr>
-            <td colspan="2">
-                <input id="action-sound" type="checkbox" onclick="actionSound()"><label for="action-sound">Action
-                    Sound</label>
             </td>
         </tr>
         <tr>
-            <td colspan="2">
-                <input id="step-sound" type="checkbox" onclick="stepSound()"><label for="step-sound">Step
-                    Sound</label>
+            <td colspan="2" class="option">
+                <input id="action-sound" type="checkbox" onclick="actionSound()">
+                <label for="action-sound">Action Sound</label>
             </td>
         </tr>
         <tr>
-            <td colspan="2">
-                <input id="show-controls" type="checkbox" onclick="showControls()"><label for="show-controls">Show
-                    Controls</label>
+            <td colspan="2" class="option">
+                <input id="step-sound" type="checkbox" onclick="stepSound()">
+                <label for="step-sound">Step Sound</label>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" class="option">
+                <input id="show-controls" type="checkbox" onclick="showControls()">
+                <label for="show-controls">Show Controls</label>
             </td>
         </tr>
         <tr>
@@ -102,10 +110,14 @@
                                 Use left, right, and down arrow keys to move, up arrow key to rotate, and space bar to
                                 drop.
                             </li>
+                            <li>
+                                Tap Explode, press E, or swipe up to spend one Quadra. The current piece's four cells
+                                fill empty spaces from the bottom center outward.
+                            </li>
                         </ul>
                     </li>
                     <li>
-                        Clearing several lines at once awards more points.
+                        Clearing several lines at once awards more points; clearing four is a Quadra.
                     </li>
                     <li>
                         Tap the back button at the top-right corner to return to this page.
@@ -125,13 +137,14 @@
                         The game ends when a new piece cannot enter the board.
                     </li>
                     <li>
-                        Every ten cleared lines increases the level and falling speed.
+                        Each level requires a Fibonacci number of additional lines:
+                        3, 5, 8, 13, 21, and so on.
                     </li>
                     <li>
-                        To play again, press the "Reset" button.
+                        To play again, press the "Restart" button on the game-over screen.
                     </li>
                     <li>
-                        Resetting the game clears your score and line count.
+                        Restarting the game clears your score, line count, and Quadra count.
                     </li>
                 </ul>
             </td>

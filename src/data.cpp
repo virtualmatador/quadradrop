@@ -1,22 +1,99 @@
 #include "data.h"
 
+#include <algorithm>
+#include <array>
 #include <sstream>
 
 #include "bridge.h"
 #include "toolbox.hpp"
 
+namespace {
+constexpr std::array<int, 41> FibonacciThresholds() {
+  std::array<int, 41> thresholds{};
+  int previous_delta = 2;
+  int delta = 3;
+  int total = 0;
+  for (std::size_t index = 0; index < thresholds.size(); ++index) {
+    total += delta;
+    thresholds[index] = total;
+    const int next_delta = previous_delta + delta;
+    previous_delta = delta;
+    delta = next_delta;
+  }
+  return thresholds;
+}
+
+constexpr auto level_thresholds = FibonacciThresholds();
+
+constexpr int FibonacciLevel(int lines) {
+  std::size_t first = 0;
+  std::size_t last = level_thresholds.size();
+  while (first < last) {
+    const std::size_t middle = first + (last - first) / 2;
+    if (lines < level_thresholds[middle])
+      last = middle;
+    else
+      first = middle + 1;
+  }
+  return static_cast<int>(first) + 1;
+}
+
+static_assert(level_thresholds.back() == 1836311898);
+static_assert(level_thresholds[1] - level_thresholds[0] > 4);
+static_assert(FibonacciLevel(0) == 1);
+static_assert(FibonacciLevel(1) == 1);
+static_assert(FibonacciLevel(2) == 1);
+static_assert(FibonacciLevel(3) == 2);
+static_assert(FibonacciLevel(7) == 2);
+static_assert(FibonacciLevel(8) == 3);
+static_assert(FibonacciLevel(15) == 3);
+static_assert(FibonacciLevel(16) == 4);
+static_assert(FibonacciLevel(28) == 4);
+static_assert(FibonacciLevel(29) == 5);
+} // namespace
+
+const int main::Data::shapes_[7][4][4][2] = {
+    {{{0, 1}, {1, 1}, {2, 1}, {3, 1}},
+     {{2, 0}, {2, 1}, {2, 2}, {2, 3}},
+     {{0, 2}, {1, 2}, {2, 2}, {3, 2}},
+     {{1, 0}, {1, 1}, {1, 2}, {1, 3}}},
+    {{{1, 0}, {2, 0}, {1, 1}, {2, 1}},
+     {{1, 0}, {2, 0}, {1, 1}, {2, 1}},
+     {{1, 0}, {2, 0}, {1, 1}, {2, 1}},
+     {{1, 0}, {2, 0}, {1, 1}, {2, 1}}},
+    {{{1, 0}, {0, 1}, {1, 1}, {2, 1}},
+     {{1, 0}, {1, 1}, {2, 1}, {1, 2}},
+     {{0, 1}, {1, 1}, {2, 1}, {1, 2}},
+     {{1, 0}, {0, 1}, {1, 1}, {1, 2}}},
+    {{{1, 0}, {2, 0}, {0, 1}, {1, 1}},
+     {{1, 0}, {1, 1}, {2, 1}, {2, 2}},
+     {{1, 1}, {2, 1}, {0, 2}, {1, 2}},
+     {{0, 0}, {0, 1}, {1, 1}, {1, 2}}},
+    {{{0, 0}, {1, 0}, {1, 1}, {2, 1}},
+     {{2, 0}, {1, 1}, {2, 1}, {1, 2}},
+     {{0, 1}, {1, 1}, {1, 2}, {2, 2}},
+     {{1, 0}, {0, 1}, {1, 1}, {0, 2}}},
+    {{{0, 0}, {0, 1}, {1, 1}, {2, 1}},
+     {{1, 0}, {2, 0}, {1, 1}, {1, 2}},
+     {{0, 1}, {1, 1}, {2, 1}, {2, 2}},
+     {{1, 0}, {1, 1}, {0, 2}, {1, 2}}},
+    {{{2, 0}, {0, 1}, {1, 1}, {2, 1}},
+     {{1, 0}, {1, 1}, {1, 2}, {2, 2}},
+     {{0, 1}, {1, 1}, {2, 1}, {0, 2}},
+     {{0, 0}, {1, 0}, {1, 1}, {1, 2}}}};
+
 main::Data main::data_;
+
+int main::Data::Level() const { return FibonacciLevel(lines_); }
 
 void main::Data::Load() {
   try {
     toolbox::Load("GAME_SCORE", score_, 0, score_max_ + 1);
     toolbox::Load("GAME_LINES", lines_, 0, lines_max_ + 1);
+    toolbox::Load("GAME_QUADRAS", quadras_, 0, quadras_max_ + 1);
     toolbox::Load("GAME_ACTION_SOUND", action_sound_, false, false);
     toolbox::Load("GAME_STEP_SOUND", step_sound_, false, false);
     toolbox::Load("GAME_SHOW_CONTROLS", show_controls_, false, false);
-    toolbox::Load("GAME_INITIALIZED", game_initialized_, false, false);
-    if (!game_initialized_)
-      return;
     toolbox::Load("GAME_PIECE", piece_, 0, 7);
     toolbox::Load("GAME_NEXT_PIECE", next_piece_, 0, 7);
     toolbox::Load("GAME_NEXT_ROTATION", next_rotation_, 0, 4);
@@ -27,9 +104,16 @@ void main::Data::Load() {
     toolbox::Load("GAME_PIECE_Y", piece_y_, 0, board_height_);
     toolbox::Load("GAME_PAUSED", paused_, false, false);
     toolbox::Load("GAME_OVER", game_over_, false, false);
-    toolbox::Load("GAME_CLEANUP_PHASE", cleanup_phase_, 0, 3);
+    toolbox::Load("GAME_CLEANUP_PHASE", cleanup_phase_, 0,
+                  static_cast<int>(CLEANUP_PHASE_COUNT));
     toolbox::Load("GAME_CLEANUP_ROW", cleanup_row_, 0, board_height_);
     toolbox::Load("GAME_CLEANUP_COUNT", cleanup_count_, 0, board_height_ + 1);
+    for (std::size_t i = 0; i < explosion_targets_.size(); ++i) {
+      std::ostringstream key;
+      key << "GAME_EXPLOSION_TARGET_" << i;
+      toolbox::Load(key.str().c_str(), explosion_targets_[i], -1,
+                    board_width_ * board_height_);
+    }
     for (int y = 0; y < board_height_; ++y) {
       std::ostringstream key;
       key << "GAME_BOARD_" << y;
@@ -50,12 +134,10 @@ void main::Data::Load() {
 void main::Data::Save() {
   toolbox::Save("GAME_SCORE", score_);
   toolbox::Save("GAME_LINES", lines_);
+  toolbox::Save("GAME_QUADRAS", quadras_);
   toolbox::Save("GAME_ACTION_SOUND", action_sound_);
   toolbox::Save("GAME_STEP_SOUND", step_sound_);
   toolbox::Save("GAME_SHOW_CONTROLS", show_controls_);
-  toolbox::Save("GAME_INITIALIZED", game_initialized_);
-  if (!game_initialized_)
-    return;
   toolbox::Save("GAME_PIECE", piece_);
   toolbox::Save("GAME_NEXT_PIECE", next_piece_);
   toolbox::Save("GAME_NEXT_ROTATION", next_rotation_);
@@ -69,6 +151,11 @@ void main::Data::Save() {
   toolbox::Save("GAME_CLEANUP_PHASE", cleanup_phase_);
   toolbox::Save("GAME_CLEANUP_ROW", cleanup_row_);
   toolbox::Save("GAME_CLEANUP_COUNT", cleanup_count_);
+  for (std::size_t i = 0; i < explosion_targets_.size(); ++i) {
+    std::ostringstream key;
+    key << "GAME_EXPLOSION_TARGET_" << i;
+    toolbox::Save(key.str().c_str(), explosion_targets_[i]);
+  }
   for (int y = 0; y < board_height_; ++y) {
     std::ostringstream key;
     key << "GAME_BOARD_" << y;
@@ -81,16 +168,89 @@ void main::Data::Save() {
 }
 
 void main::Data::Reset() {
+  action_sound_ = true;
+  step_sound_ = false;
+  show_controls_ = false;
+  Restart();
+}
+
+void main::Data::Restart() {
   score_ = 0;
   lines_ = 0;
-  action_sound_ = true;
-  step_sound_ = true;
-  show_controls_ = true;
-  game_initialized_ = false;
+  quadras_ = 3;
   board_ = {};
   paused_ = true;
   game_over_ = false;
-  cleanup_phase_ = 0;
+  cleanup_phase_ = CLEANUP_PLAYING;
   cleanup_row_ = 0;
   cleanup_count_ = 0;
+  explosion_targets_.fill(-1);
+  ChooseNextPiece();
+  SpawnPiece(false);
+}
+
+void main::Data::SpawnPiece(bool has_previous_piece) {
+  const int piece = next_piece_;
+  const int rotation = next_rotation_;
+  const int x = next_piece_x_;
+  const int y = next_piece_y_;
+
+  ChooseNextPiece(piece, has_previous_piece ? piece_ : -1);
+
+  piece_ = piece;
+  rotation_ = rotation;
+  piece_x_ = x;
+  piece_y_ = y;
+  ++piece_generation_;
+  if (!Fits(piece_, rotation_, piece_x_, piece_y_)) {
+    score_ += quadras_ * 40;
+    quadras_ = 0;
+    game_over_ = true;
+  }
+}
+
+void main::Data::ChooseNextPiece(int previous_piece, int earlier_piece) {
+  int weights[7];
+  if (previous_piece < 0) {
+    std::fill(std::begin(weights), std::end(weights), 19);
+  } else if (earlier_piece < 0 || previous_piece == earlier_piece) {
+    std::fill(std::begin(weights), std::end(weights), 22);
+    weights[previous_piece] = 1;
+  } else {
+    std::fill(std::begin(weights), std::end(weights), 26);
+    weights[previous_piece] = 1;
+    weights[earlier_piece] = 2;
+  }
+
+  int selection = std::uniform_int_distribution<int>(1, 133)(random_);
+  for (next_piece_ = 0; next_piece_ < 6; ++next_piece_) {
+    selection -= weights[next_piece_];
+    if (selection <= 0)
+      break;
+  }
+  next_rotation_ = std::uniform_int_distribution<int>(0, 3)(random_);
+
+  int min_x = 3;
+  int max_x = 0;
+  int max_y = 0;
+  for (const auto &block : shapes_[next_piece_][next_rotation_]) {
+    min_x = std::min(min_x, block[0]);
+    max_x = std::max(max_x, block[0]);
+    max_y = std::max(max_y, block[1]);
+  }
+
+  next_piece_x_ =
+      std::uniform_int_distribution<int>(3 - min_x, 6 - max_x)(random_);
+  next_piece_y_ = hidden_rows_ - max_y;
+}
+
+bool main::Data::Fits(int type, int rotation, int x, int y) const {
+  for (const auto &block : shapes_[type][rotation]) {
+    const int bx = x + block[0];
+    const int by = y + block[1];
+    if (bx < 0 || bx >= board_width_ || by < 0 || by >= board_height_ ||
+        board_[by][bx])
+      return false;
+  }
+  return true;
 }
