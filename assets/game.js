@@ -1,5 +1,6 @@
 const audioIds = [
-  'move', 'step', 'food', 'turn', 'lock', 'explode', 'level', 'win', 'die'
+  'move', 'step', 'food', 'turn', 'lock', 'explode', 'level', 'win', 'die',
+  'invalid'
 ];
 const audios = {};
 let audioContext;
@@ -17,7 +18,7 @@ let renderedCleanupPhase = null;
 let renderedCleanupCount = 0;
 let renderedPaused = null;
 let gameStateReady = false;
-let gameplayInputEnabled = false;
+let gameInputEnabled = false;
 let gameEnded = false;
 
 const gestureThreshold = 18;
@@ -160,17 +161,18 @@ function renderGame(
   renderedCleanupCount = cleanupCount;
   renderedPaused = paused;
 
-  const gameplayEnabled =
-      !paused && !gameOver && cleanupPhase === cleanupPlaying;
-  if (renderedPieceGeneration !== pieceGeneration || !gameplayEnabled)
+  const inputEnabled = !paused && !gameOver;
+  const actionsAvailable = inputEnabled && cleanupPhase === cleanupPlaying;
+  if (renderedPieceGeneration !== pieceGeneration || !inputEnabled)
     pointerCancel();
   renderedPieceGeneration = pieceGeneration;
   gamePaused = paused;
   gameStateReady = true;
-  gameplayInputEnabled = gameplayEnabled;
+  gameInputEnabled = inputEnabled;
   gameEnded = gameOver;
   const boardElement = document.getElementById('board');
-  boardElement.setAttribute('aria-disabled', (!gameplayEnabled).toString());
+  boardElement.setAttribute(
+      'aria-disabled', (!actionsAvailable).toString());
   const animatedCells =
       boardElement.querySelectorAll('.cell-clearing, .cell-moving');
   animatedCells.forEach(function(cell) {
@@ -213,7 +215,8 @@ function renderGame(
   document.getElementById('quadras').textContent = quadras;
   const controlButtons = document.querySelectorAll('#controls button');
   controlButtons.forEach(function(button) {
-    button.disabled = !gameplayEnabled;
+    button.disabled = !inputEnabled;
+    button.setAttribute('aria-disabled', (!actionsAvailable).toString());
   });
   const explodeButton = document.getElementById('explode');
   explodeButton.title = gameOver ? 'Game over' :
@@ -254,7 +257,7 @@ function playAudio(id) {
 }
 
 function pointerDown(event) {
-  if (!gameplayInputEnabled) return;
+  if (!gameInputEnabled) return;
   pointerStart = {x: event.clientX, y: event.clientY};
   pointerLast = {x: event.clientX, y: event.clientY};
   swipeRemainder = {x: 0, y: 0};
@@ -376,7 +379,7 @@ document.addEventListener('keydown', function(event) {
     Escape: 'back'
   };
   let action = actions[event.code];
-  if (action && action !== 'back' && !gameplayInputEnabled) action = null;
+  if (action && action !== 'back' && !gameInputEnabled) action = null;
   if (gameStateReady && !gameEnded &&
       ((event.code === 'KeyP' && !gamePaused) ||
        (event.code === 'KeyR' && gamePaused)))

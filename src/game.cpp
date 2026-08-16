@@ -9,6 +9,36 @@
 
 namespace {
 constexpr int explosion_columns[10] = {4, 5, 3, 6, 2, 7, 1, 8, 0, 9};
+
+enum class GameplayAction {
+  UNKNOWN,
+  LEFT,
+  RIGHT,
+  DOWN,
+  ROTATE_LEFT,
+  ROTATE_RIGHT,
+  DROP,
+  EXPLODE,
+};
+
+GameplayAction ParseGameplayAction(const char *action) {
+  if (std::strcmp(action, "left") == 0)
+    return GameplayAction::LEFT;
+  if (std::strcmp(action, "right") == 0)
+    return GameplayAction::RIGHT;
+  if (std::strcmp(action, "down") == 0)
+    return GameplayAction::DOWN;
+  if (std::strcmp(action, "rotate-left") == 0)
+    return GameplayAction::ROTATE_LEFT;
+  if (std::strcmp(action, "rotate") == 0 ||
+      std::strcmp(action, "rotate-right") == 0)
+    return GameplayAction::ROTATE_RIGHT;
+  if (std::strcmp(action, "drop") == 0)
+    return GameplayAction::DROP;
+  if (std::strcmp(action, "explode") == 0)
+    return GameplayAction::EXPLODE;
+  return GameplayAction::UNKNOWN;
+}
 } // namespace
 
 main::Game::Game() {
@@ -164,24 +194,27 @@ void main::Game::HandleAction(const char *action) {
   bool changed = false;
   bool became_game_over = false;
   const char *sound = nullptr;
+  const GameplayAction gameplay_action = ParseGameplayAction(action);
   {
     std::lock_guard<std::mutex> guard(lock_);
     const bool was_game_over = data_.game_over_;
-    if (!data_.paused_ && !data_.game_over_ && !data_.cleanup_phase_) {
-      if (std::strcmp(action, "left") == 0) {
+    if (!data_.paused_ && !data_.game_over_ &&
+        gameplay_action != GameplayAction::UNKNOWN) {
+      if (data_.cleanup_phase_) {
+        sound = "invalid";
+      } else if (gameplay_action == GameplayAction::LEFT) {
         changed = Move(-1, 0);
-        sound = changed ? "move" : nullptr;
-      } else if (std::strcmp(action, "right") == 0) {
+        sound = changed ? "move" : "invalid";
+      } else if (gameplay_action == GameplayAction::RIGHT) {
         changed = Move(1, 0);
-        sound = changed ? "move" : nullptr;
-      } else if (std::strcmp(action, "rotate") == 0 ||
-                 std::strcmp(action, "rotate-right") == 0) {
+        sound = changed ? "move" : "invalid";
+      } else if (gameplay_action == GameplayAction::ROTATE_RIGHT) {
         changed = Rotate(1);
-        sound = changed ? "turn" : nullptr;
-      } else if (std::strcmp(action, "rotate-left") == 0) {
+        sound = changed ? "turn" : "invalid";
+      } else if (gameplay_action == GameplayAction::ROTATE_LEFT) {
         changed = Rotate(-1);
-        sound = changed ? "turn" : nullptr;
-      } else if (std::strcmp(action, "down") == 0) {
+        sound = changed ? "turn" : "invalid";
+      } else if (gameplay_action == GameplayAction::DOWN) {
         changed = Move(0, 1);
         if (changed) {
           ++data_.score_;
@@ -191,14 +224,18 @@ void main::Game::HandleAction(const char *action) {
           changed = true;
         }
         frame_ = 0;
-      } else if (std::strcmp(action, "drop") == 0) {
+      } else if (gameplay_action == GameplayAction::DROP) {
         sound = HardDrop();
         changed = true;
         frame_ = 0;
-      } else if (std::strcmp(action, "explode") == 0 && data_.quadras_ > 0) {
-        sound = Explode();
-        changed = true;
-        frame_ = 0;
+      } else if (gameplay_action == GameplayAction::EXPLODE) {
+        if (data_.quadras_ > 0) {
+          sound = Explode();
+          changed = true;
+          frame_ = 0;
+        } else {
+          sound = "invalid";
+        }
       }
     }
     became_game_over = !was_game_over && data_.game_over_;
