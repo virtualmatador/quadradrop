@@ -16,6 +16,9 @@ let renderedPieceGeneration = 0;
 let renderedCleanupPhase = null;
 let renderedCleanupCount = 0;
 let renderedPaused = null;
+let gameStateReady = false;
+let gameplayInputEnabled = false;
+let gameEnded = false;
 
 const gestureThreshold = 18;
 const releaseMoveDelay = 150;
@@ -157,10 +160,17 @@ function renderGame(
   renderedCleanupCount = cleanupCount;
   renderedPaused = paused;
 
-  if (renderedPieceGeneration !== pieceGeneration) pointerCancel();
+  const gameplayEnabled =
+      !paused && !gameOver && cleanupPhase === cleanupPlaying;
+  if (renderedPieceGeneration !== pieceGeneration || !gameplayEnabled)
+    pointerCancel();
   renderedPieceGeneration = pieceGeneration;
   gamePaused = paused;
+  gameStateReady = true;
+  gameplayInputEnabled = gameplayEnabled;
+  gameEnded = gameOver;
   const boardElement = document.getElementById('board');
+  boardElement.setAttribute('aria-disabled', (!gameplayEnabled).toString());
   const animatedCells =
       boardElement.querySelectorAll('.cell-clearing, .cell-moving');
   animatedCells.forEach(function(cell) {
@@ -201,14 +211,15 @@ function renderGame(
   document.getElementById('lines').textContent = lines;
   document.getElementById('level').textContent = level;
   document.getElementById('quadras').textContent = quadras;
+  const controlButtons = document.querySelectorAll('#controls button');
+  controlButtons.forEach(function(button) {
+    button.disabled = !gameplayEnabled;
+  });
   const explodeButton = document.getElementById('explode');
-  explodeButton.disabled = quadras <= 0 || paused || gameOver ||
-      cleanupPhase !== cleanupPlaying;
   explodeButton.title = gameOver ? 'Game over' :
-      (paused ? 'Resume to explode' :
-       (cleanupPhase !== cleanupPlaying ? 'Wait for cleanup to finish' :
-        (quadras <= 0 ? 'No Quadras available' :
-                       'Explode using one Quadra (E or swipe up)')));
+      paused ? 'Resume to explode' :
+      cleanupPhase !== cleanupPlaying ? 'Wait for cleanup to finish' :
+      'Explode using one Quadra (E or swipe up)';
   const animatedStatistics = [];
   if (levelChanged) animatedStatistics.push('level');
   if (enteredWin || explosionAccepted) animatedStatistics.push('quadras');
@@ -216,6 +227,7 @@ function renderGame(
   const pauseButton = document.getElementById('pause');
   const pauseButtonLabel = paused ? 'Resume' : 'Pause';
   pauseButton.hidden = gameOver;
+  pauseButton.disabled = gameOver;
   pauseButton.textContent = paused ? '\u25b6' : '\u23f8';
   pauseButton.setAttribute('aria-label', pauseButtonLabel);
   pauseButton.title = pauseButtonLabel;
@@ -227,7 +239,9 @@ function renderGame(
   document.getElementById('overlay-help').hidden = gameOver;
   document.getElementById('overlay-help').textContent =
       'Press resume button to continue.';
-  document.getElementById('restart').hidden = !gameOver;
+  const restartButton = document.getElementById('restart');
+  restartButton.hidden = !gameOver;
+  restartButton.disabled = !gameOver;
 }
 
 function playAudio(id) {
@@ -240,6 +254,7 @@ function playAudio(id) {
 }
 
 function pointerDown(event) {
+  if (!gameplayInputEnabled) return;
   pointerStart = {x: event.clientX, y: event.clientY};
   pointerLast = {x: event.clientX, y: event.clientY};
   swipeRemainder = {x: 0, y: 0};
@@ -361,10 +376,15 @@ document.addEventListener('keydown', function(event) {
     Escape: 'back'
   };
   let action = actions[event.code];
-  if (action === 'explode' && event.repeat) return;
-  if ((event.code === 'KeyP' && !gamePaused) ||
-      (event.code === 'KeyR' && gamePaused))
+  if (action && action !== 'back' && !gameplayInputEnabled) action = null;
+  if (gameStateReady && !gameEnded &&
+      ((event.code === 'KeyP' && !gamePaused) ||
+       (event.code === 'KeyR' && gamePaused)))
     action = 'pause';
+  if (event.repeat &&
+      (action === 'drop' || action === 'explode' || action === 'pause' ||
+       action === 'back'))
+    return;
   if (action) {
     event.preventDefault();
     sendAction(action);

@@ -1,0 +1,50 @@
+:root {
+    color-scheme: light dark;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f8fafc;
+    color: #0f172a;
+    --page-background: #f8fafc;
+    --surface-background: #ffffff;
+    --surface-subtle-background: #f1f5f9;
+    --control-background: #ffffff;
+    --control-active-background: #e2e8f0;
+    --border-color: #cbd5e1;
+    --strong-border-color: #64748b;
+    --text-color: #0f172a;
+    --muted-text-color: #475569;
+    --focus-color: #7c3aed;
+    --accent-color: #0891b2;
+    --board-background: #020617;
+    --cell-background: #111827;
+    --overlay-background: rgb(2 6 23 / .82);
+    --overlay-text-color: #f8fafc;
+    --overlay-muted-text-color: #cbd5e1;
+    --highlight-background: #cffafe;
+    --highlight-border-color: #0891b2;
+    --highlight-shadow: rgb(8 145 178 / .2);
+    --surface-shadow: 0 .75rem 2rem rgb(15 23 42 / .08);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        background: #0b1020;
+        color: #f8fafc;
+        --page-background: #0b1020;
+        --surface-background: #111827;
+        --surface-subtle-background: #172033;
+        --control-background: #1e293b;
+        --control-active-background: #334155;
+        --border-color: #273449;
+        --strong-border-color: #64748b;
+        --text-color: #f8fafc;
+        --muted-text-color: #94a3b8;
+        --focus-color: #c4b5fd;
+        --accent-color: #22d3ee;
+        --board-background: #020617;
+        --cell-background: #111827;
+        --highlight-background: #164e63;
+        --highlight-border-color: #38bdf8;
+        --highlight-shadow: rgb(56 189 248 / .2);
+        --surface-shadow: 0 .75rem 2rem rgb(0 0 0 / .24);
+    }
+}

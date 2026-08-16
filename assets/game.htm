@@ -4,6 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1, user-scalable=0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8fafc">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1020">
+    <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="game.css">
     <script src="game.js" defer></script>
     <title>QuadraDrop</title>
@@ -12,19 +16,19 @@
 <body>
     <main class="game-shell">
         <section class="board-wrap" aria-label="QuadraDrop board">
-            <div id="board" class="board" tabindex="0" onpointerdown="pointerDown(event)" onpointermove="pointerMove(event)"
+            <div id="board" class="board" tabindex="0" aria-disabled="true" onpointerdown="pointerDown(event)" onpointermove="pointerMove(event)"
                 onpointerup="pointerUp(event)" onpointercancel="pointerCancel()"></div>
             <div id="overlay" class="overlay" hidden>
                 <strong id="overlay-title"></strong>
                 <span id="overlay-help"></span>
-                <button id="restart" type="button" onclick="sendAction('restart')" hidden>
+                <button id="restart" type="button" onclick="sendAction('restart')" hidden disabled>
                     Restart
                 </button>
             </div>
         </section>
         <aside class="sidebar">
             <div class="top-actions">
-                <button id="pause" onclick="sendAction('pause')"></button>
+                <button id="pause" onclick="sendAction('pause')" disabled></button>
                 <button class="back" aria-label="Back to menu" onclick="sendAction('back')">&#10005;</button>
             </div>
             <div class="panel next-panel"><span>Next</span>
@@ -35,16 +39,16 @@
             <div class="panel"><span>Score</span><strong id="score">0</strong></div>
             <div class="panel"><span>Quadras</span><strong id="quadras">0</strong></div>
             <div id="controls" class="controls">
-                <button class="rotate-control" aria-label="Rotate left" title="Rotate left"
+                <button class="rotate-control" aria-label="Rotate left" title="Rotate left" disabled
                     onclick="sendAction('rotate-left')">&#8634;</button>
-                <button class="rotate-control" aria-label="Rotate right" title="Rotate right"
+                <button class="rotate-control" aria-label="Rotate right" title="Rotate right" disabled
                     onclick="sendAction('rotate-right')">&#8635;</button>
-                <button class="move-control" aria-label="Move left" onclick="sendAction('left')">&#9664;</button>
-                <button class="move-control" aria-label="Move down" onclick="sendAction('down')">&#9660;</button>
-                <button class="move-control" aria-label="Move right" onclick="sendAction('right')">&#9654;</button>
+                <button class="move-control" aria-label="Move left" onclick="sendAction('left')" disabled>&#9664;</button>
+                <button class="move-control" aria-label="Move down" onclick="sendAction('down')" disabled>&#9660;</button>
+                <button class="move-control" aria-label="Move right" onclick="sendAction('right')" disabled>&#9654;</button>
                 <button id="explode" class="explode-control" type="button" aria-keyshortcuts="E"
-                    aria-label="Explode using one Quadra" onclick="sendAction('explode')">Explode</button>
-                <button class="drop-control" aria-keyshortcuts="D" onclick="sendAction('drop')">Drop</button>
+                    aria-label="Explode using one Quadra" onclick="sendAction('explode')" disabled>Explode</button>
+                <button class="drop-control" aria-keyshortcuts="D" onclick="sendAction('drop')" disabled>Drop</button>
             </div>
         </aside>
     </main>
