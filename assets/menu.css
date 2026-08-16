@@ -96,6 +96,14 @@ body > table:not(#controls)
     font-weight: bold;
 }
 
+.save-error
+{
+    padding: .75rem;
+    border: 1px solid var(--highlight-border-color);
+    border-radius: .65rem;
+    background: var(--highlight-background);
+}
+
 button
 {
     width: 8em;
@@ -111,6 +119,13 @@ button:active
 {
     background: var(--control-active-background);
     transform: translateY(1px);
+}
+
+button:disabled,
+input:disabled
+{
+    cursor: default;
+    opacity: .6;
 }
 
 button:focus-visible,

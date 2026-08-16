@@ -6,7 +6,9 @@
 //  Copyright © 2020 Shaidin. All rights reserved.
 //
 
+#include <istream>
 #include <locale>
+#include <ostream>
 
 #include "main.h"
 
@@ -17,15 +19,13 @@
 
 main::PROGRESS main::progress_ = main::PROGRESS::MENU;
 
-void application::Restore(Completion completion) {
+void application::Restore(std::istream &input, Completion completion) {
   std::locale::global(std::locale::classic());
-  main::data_.Load();
+  main::data_.Load(input);
   completion();
 }
 
-void application::Checkpoint() {
-  main::data_.Save();
-}
+void application::Checkpoint(std::ostream &output) { main::data_.Save(output); }
 
 std::unique_ptr<core::Stage> application::CreateStage() {
   if (main::progress_ == main::PROGRESS::GAME) {

@@ -20,6 +20,15 @@
                 QuadraDrop
             </td>
         </tr>
+        <tr id="save-version-error" hidden>
+            <td colspan="2">
+                <div class="save-error" role="alert">
+                    Saved data version <strong id="save-data-version"></strong> cannot be loaded.
+                    Expected version <strong id="save-expected-version"></strong>.
+                    Reset is required to continue.
+                </div>
+            </td>
+        </tr>
         <tr>
             <td class="key">
                 Lines:
@@ -54,7 +63,7 @@
         </tr>
         <tr>
             <td colspan="2">
-                <button onclick="play()">Play</button>
+                <button id="play" onclick="play()">Play</button>
             </td>
         </tr>
         <tr>
@@ -143,7 +152,7 @@
                         Advancing levels increases the speed of the falling piece.
                     </li>
                     <li>
-                        To play again, press the "Restart" button on the game-over screen.
+                        To play again, press the Restart button next to the Back button.
                     </li>
                     <li>
                         Restarting the game clears your score, line count, and Quadra count.

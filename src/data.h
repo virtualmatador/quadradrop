@@ -2,6 +2,7 @@
 #define SRC_DATA_H
 
 #include <array>
+#include <iosfwd>
 #include <random>
 
 namespace main {
@@ -11,8 +12,8 @@ class Data {
 
 public:
   Data() = default;
-  void Load();
-  void Save();
+  void Load(std::istream &input);
+  void Save(std::ostream &output) const;
   void Reset();
 
 private:
@@ -28,6 +29,7 @@ private:
   };
 
   int Level() const;
+  bool Convert(int version, std::istream &input);
   void Restart();
   void SpawnPiece(bool has_previous_piece = true);
   void ChooseNextPiece(int previous_piece = -1, int earlier_piece = -1);
@@ -37,10 +39,12 @@ private:
   static constexpr int board_height_ = 24;
   static constexpr int hidden_rows_ = 4;
   static const int shapes_[7][4][4][2];
-  using Board = std::array<std::array<int, board_width_>, board_height_>;
   static constexpr int score_max_ = 1000000000;
   static constexpr int lines_max_ = 1000000;
-  static constexpr int quadras_max_ = lines_max_ / 4;
+  static constexpr int quadras_max_ = 100000;
+  static constexpr int save_version_ = 1;
+
+  using Board = std::array<std::array<int, board_width_>, board_height_>;
   int score_ = 0;
   int lines_ = 0;
   int quadras_ = 0;
@@ -63,6 +67,8 @@ private:
   int cleanup_count_ = 0;
   std::array<int, 4> explosion_targets_{{-1, -1, -1, -1}};
   unsigned int piece_generation_ = 0;
+  bool incompatible_save_ = false;
+  int incompatible_save_version_ = save_version_;
   std::random_device seeder_;
   std::default_random_engine random_{seeder_()};
 };

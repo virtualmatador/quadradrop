@@ -14,11 +14,8 @@
     --muted-text-color: #475569;
     --focus-color: #7c3aed;
     --accent-color: #0891b2;
-    --board-background: #020617;
-    --cell-background: #111827;
-    --overlay-background: rgb(2 6 23 / .82);
-    --overlay-text-color: #f8fafc;
-    --overlay-muted-text-color: #cbd5e1;
+    --board-background: #f1f5f9;
+    --cell-background: #e8eef6;
     --highlight-background: #cffafe;
     --highlight-border-color: #0891b2;
     --highlight-shadow: rgb(8 145 178 / .2);

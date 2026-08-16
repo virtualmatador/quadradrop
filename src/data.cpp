@@ -3,11 +3,10 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
-#include <limits>
-#include <sstream>
-
-#include "bridge.h"
-#include "toolbox.hpp"
+#include <iomanip>
+#include <ios>
+#include <istream>
+#include <ostream>
 
 namespace {
 constexpr std::int64_t LevelThreshold(int level) {
@@ -67,88 +66,145 @@ main::Data main::data_;
 
 int main::Data::Level() const { return QuadraticLevel(lines_); }
 
-void main::Data::Load() {
-  try {
-    toolbox::Load("GAME_SCORE", score_, 0, score_max_ + 1);
-    toolbox::Load("GAME_LINES", lines_, 0, lines_max_ + 1);
-    toolbox::Load("GAME_QUADRAS", quadras_, 0, quadras_max_ + 1);
-    toolbox::Load("GAME_ACTION_SOUND", action_sound_, false, false);
-    toolbox::Load("GAME_STEP_SOUND", step_sound_, false, false);
-    toolbox::Load("GAME_SHOW_CONTROLS", show_controls_, false, false);
-    toolbox::Load("GAME_PIECE", piece_, 0, 7);
-    toolbox::Load("GAME_NEXT_PIECE", next_piece_, 0, 7);
-    toolbox::Load("GAME_NEXT_ROTATION", next_rotation_, 0, 4);
-    toolbox::Load("GAME_NEXT_PIECE_X", next_piece_x_, 1, 6);
-    toolbox::Load("GAME_NEXT_PIECE_Y", next_piece_y_, 1, 4);
-    toolbox::Load("GAME_ROTATION", rotation_, 0, 4);
-    toolbox::Load("GAME_PIECE_X", piece_x_, -2, board_width_);
-    toolbox::Load("GAME_PIECE_Y", piece_y_, 0, board_height_);
-    toolbox::Load("GAME_PAUSED", paused_, false, false);
-    toolbox::Load("GAME_OVER", game_over_, false, false);
-    toolbox::Load("GAME_CLEANUP_PHASE", cleanup_phase_, 0,
-                  static_cast<int>(CLEANUP_PHASE_COUNT));
-    toolbox::Load("GAME_CLEANUP_ROW", cleanup_row_, 0, board_height_);
-    toolbox::Load("GAME_CLEANUP_COUNT", cleanup_count_, 0, board_height_ + 1);
-    for (std::size_t i = 0; i < explosion_targets_.size(); ++i) {
-      std::ostringstream key;
-      key << "GAME_EXPLOSION_TARGET_" << i;
-      toolbox::Load(key.str().c_str(), explosion_targets_[i], -1,
-                    board_width_ * board_height_);
-    }
-    for (int y = 0; y < board_height_; ++y) {
-      std::ostringstream key;
-      key << "GAME_BOARD_" << y;
-      const auto row = bridge::GetPreference(key.str().c_str());
-      if (row.size() != board_width_)
-        throw "invalid board row";
-      for (int x = 0; x < board_width_; ++x) {
-        if (row[x] < '0' || row[x] > '7')
-          throw "invalid board cell";
-        board_[y][x] = row[x] - '0';
-      }
-    }
-  } catch (...) {
+void main::Data::Load(std::istream &input) {
+  input >> std::dec >> std::noboolalpha >> std::skipws;
+  int version = 0;
+  if (!(input >> version)) {
     Reset();
+    return;
+  }
+
+  if (version != save_version_) {
+    if (Convert(version, input)) {
+      incompatible_save_ = false;
+      incompatible_save_version_ = save_version_;
+      return;
+    }
+
+    Reset();
+    incompatible_save_ = true;
+    incompatible_save_version_ = version;
+    return;
+  }
+
+  Data loaded;
+  bool valid = static_cast<bool>(
+      input >> loaded.score_ >> loaded.lines_ >> loaded.quadras_ >>
+      loaded.action_sound_ >> loaded.step_sound_ >> loaded.show_controls_ >>
+      loaded.piece_ >> loaded.next_piece_ >> loaded.next_rotation_ >>
+      loaded.next_piece_x_ >> loaded.next_piece_y_ >> loaded.rotation_ >>
+      loaded.piece_x_ >> loaded.piece_y_ >> loaded.paused_ >>
+      loaded.game_over_ >> loaded.cleanup_phase_ >> loaded.cleanup_row_ >>
+      loaded.cleanup_count_);
+  for (std::size_t i = 0; valid && i < loaded.explosion_targets_.size(); ++i) {
+    valid = static_cast<bool>(input >> loaded.explosion_targets_[i]);
+  }
+  for (auto &row : loaded.board_)
+    for (int &cell : row)
+      if (valid)
+        valid = static_cast<bool>(input >> cell);
+  if (valid) {
+    input >> std::ws;
+    valid = input.eof() && !input.bad();
+  }
+
+  valid = valid && loaded.score_ >= 0 && loaded.score_ <= score_max_ &&
+          loaded.lines_ >= 0 && loaded.lines_ <= lines_max_ &&
+          loaded.quadras_ >= 0 && loaded.quadras_ <= quadras_max_ &&
+          loaded.piece_ >= 0 && loaded.piece_ < 7 && loaded.next_piece_ >= 0 &&
+          loaded.next_piece_ < 7 && loaded.next_rotation_ >= 0 &&
+          loaded.next_rotation_ < 4 && loaded.next_piece_x_ >= 1 &&
+          loaded.next_piece_x_ < 6 && loaded.next_piece_y_ >= 1 &&
+          loaded.next_piece_y_ < 4 && loaded.rotation_ >= 0 &&
+          loaded.rotation_ < 4 && loaded.piece_x_ >= -2 &&
+          loaded.piece_x_ < board_width_ && loaded.piece_y_ >= 0 &&
+          loaded.piece_y_ < board_height_ &&
+          loaded.cleanup_phase_ >= CLEANUP_PLAYING &&
+          loaded.cleanup_phase_ < CLEANUP_PHASE_COUNT &&
+          loaded.cleanup_row_ >= 0 && loaded.cleanup_row_ < board_height_ &&
+          loaded.cleanup_count_ >= 0 && loaded.cleanup_count_ <= board_height_;
+  for (std::size_t i = 0; valid && i < loaded.explosion_targets_.size(); ++i) {
+    valid = loaded.explosion_targets_[i] >= -1 &&
+            loaded.explosion_targets_[i] < board_width_ * board_height_;
+  }
+  for (const auto &row : loaded.board_)
+    for (int cell : row)
+      if (valid)
+        valid = cell >= 0 && cell <= 7;
+  if (!valid) {
+    Reset();
+    return;
+  }
+
+  score_ = loaded.score_;
+  lines_ = loaded.lines_;
+  quadras_ = loaded.quadras_;
+  action_sound_ = loaded.action_sound_;
+  step_sound_ = loaded.step_sound_;
+  show_controls_ = loaded.show_controls_;
+  board_ = loaded.board_;
+  piece_ = loaded.piece_;
+  next_piece_ = loaded.next_piece_;
+  next_rotation_ = loaded.next_rotation_;
+  next_piece_x_ = loaded.next_piece_x_;
+  next_piece_y_ = loaded.next_piece_y_;
+  rotation_ = loaded.rotation_;
+  piece_x_ = loaded.piece_x_;
+  piece_y_ = loaded.piece_y_;
+  paused_ = loaded.paused_;
+  game_over_ = loaded.game_over_;
+  cleanup_phase_ = loaded.cleanup_phase_;
+  cleanup_row_ = loaded.cleanup_row_;
+  cleanup_count_ = loaded.cleanup_count_;
+  explosion_targets_ = loaded.explosion_targets_;
+  incompatible_save_ = false;
+  incompatible_save_version_ = save_version_;
+}
+
+bool main::Data::Convert(int version, std::istream &) {
+  switch (version) {
+  default:
+    return false;
   }
 }
 
-void main::Data::Save() {
-  toolbox::Save("GAME_SCORE", score_);
-  toolbox::Save("GAME_LINES", lines_);
-  toolbox::Save("GAME_QUADRAS", quadras_);
-  toolbox::Save("GAME_ACTION_SOUND", action_sound_);
-  toolbox::Save("GAME_STEP_SOUND", step_sound_);
-  toolbox::Save("GAME_SHOW_CONTROLS", show_controls_);
-  toolbox::Save("GAME_PIECE", piece_);
-  toolbox::Save("GAME_NEXT_PIECE", next_piece_);
-  toolbox::Save("GAME_NEXT_ROTATION", next_rotation_);
-  toolbox::Save("GAME_NEXT_PIECE_X", next_piece_x_);
-  toolbox::Save("GAME_NEXT_PIECE_Y", next_piece_y_);
-  toolbox::Save("GAME_ROTATION", rotation_);
-  toolbox::Save("GAME_PIECE_X", piece_x_);
-  toolbox::Save("GAME_PIECE_Y", piece_y_);
-  toolbox::Save("GAME_PAUSED", paused_);
-  toolbox::Save("GAME_OVER", game_over_);
-  toolbox::Save("GAME_CLEANUP_PHASE", cleanup_phase_);
-  toolbox::Save("GAME_CLEANUP_ROW", cleanup_row_);
-  toolbox::Save("GAME_CLEANUP_COUNT", cleanup_count_);
-  for (std::size_t i = 0; i < explosion_targets_.size(); ++i) {
-    std::ostringstream key;
-    key << "GAME_EXPLOSION_TARGET_" << i;
-    toolbox::Save(key.str().c_str(), explosion_targets_[i]);
+void main::Data::Save(std::ostream &output) const {
+  if (incompatible_save_) {
+    output.setstate(std::ios::failbit);
+    return;
   }
-  for (int y = 0; y < board_height_; ++y) {
-    std::ostringstream key;
-    key << "GAME_BOARD_" << y;
-    std::string row;
-    row.reserve(board_width_);
-    for (int cell : board_[y])
-      row.push_back(static_cast<char>('0' + cell));
-    bridge::SetPreference(key.str().c_str(), row.c_str());
-  }
+  output << std::dec << std::noboolalpha << std::noshowbase << std::noshowpos;
+  output.width(0);
+  output << save_version_ << '\n'
+         << score_ << '\n'
+         << lines_ << '\n'
+         << quadras_ << '\n'
+         << action_sound_ << '\n'
+         << step_sound_ << '\n'
+         << show_controls_ << '\n'
+         << piece_ << '\n'
+         << next_piece_ << '\n'
+         << next_rotation_ << '\n'
+         << next_piece_x_ << '\n'
+         << next_piece_y_ << '\n'
+         << rotation_ << '\n'
+         << piece_x_ << '\n'
+         << piece_y_ << '\n'
+         << paused_ << '\n'
+         << game_over_ << '\n'
+         << cleanup_phase_ << '\n'
+         << cleanup_row_ << '\n'
+         << cleanup_count_ << '\n';
+  for (std::size_t i = 0; i < explosion_targets_.size(); ++i)
+    output << explosion_targets_[i] << '\n';
+  for (const auto &row : board_)
+    for (int cell : row)
+      output << cell << '\n';
 }
 
 void main::Data::Reset() {
+  incompatible_save_ = false;
+  incompatible_save_version_ = save_version_;
   action_sound_ = true;
   step_sound_ = false;
   show_controls_ = false;

@@ -235,13 +235,6 @@ function renderGame(
   pauseButton.setAttribute('aria-label', pauseButtonLabel);
   pauseButton.title = pauseButtonLabel;
 
-  const overlay = document.getElementById('overlay');
-  overlay.hidden = !paused && !gameOver;
-  document.getElementById('overlay-title').textContent =
-      gameOver ? 'Game Over' : 'Paused';
-  document.getElementById('overlay-help').hidden = gameOver;
-  document.getElementById('overlay-help').textContent =
-      'Press resume button to continue.';
   const restartButton = document.getElementById('restart');
   restartButton.hidden = !gameOver;
   restartButton.disabled = !gameOver;

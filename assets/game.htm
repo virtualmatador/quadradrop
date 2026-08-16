@@ -18,17 +18,12 @@
         <section class="board-wrap" aria-label="QuadraDrop board">
             <div id="board" class="board" tabindex="0" aria-disabled="true" onpointerdown="pointerDown(event)" onpointermove="pointerMove(event)"
                 onpointerup="pointerUp(event)" onpointercancel="pointerCancel()"></div>
-            <div id="overlay" class="overlay" hidden>
-                <strong id="overlay-title"></strong>
-                <span id="overlay-help"></span>
-                <button id="restart" type="button" onclick="sendAction('restart')" hidden disabled>
-                    Restart
-                </button>
-            </div>
         </section>
         <aside class="sidebar">
             <div class="top-actions">
                 <button id="pause" onclick="sendAction('pause')" disabled></button>
+                <button id="restart" type="button" aria-label="Restart" title="Restart"
+                    onclick="sendAction('restart')" hidden disabled>&#10227;</button>
                 <button class="back" aria-label="Back to menu" onclick="sendAction('back')">&#10005;</button>
             </div>
             <div class="panel next-panel"><span>Next</span>

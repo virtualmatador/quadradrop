@@ -453,7 +453,10 @@ const char *main::Game::ResolveBoard() {
     return "food";
   }
   if (data_.cleanup_count_ > 3) {
-    ++data_.quadras_;
+    if (data_.quadras_ < Data::quadras_max_)
+      ++data_.quadras_;
+    else
+      data_.score_ += 40;
     data_.cleanup_phase_ = Data::CLEANUP_WIN;
     return "win";
   }

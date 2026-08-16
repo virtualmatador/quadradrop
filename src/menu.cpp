@@ -21,8 +21,13 @@ main::Menu::Menu() {
       return;
     else if (std::strcmp(command, "ready") == 0) {
       std::ostringstream js;
-      js.str("");
-      js.clear();
+      if (data_.incompatible_save_) {
+        js << "setSaveVersionError(" << data_.incompatible_save_version_ << ','
+           << Data::save_version_ << ")";
+        bridge::CallFunction(js.str().c_str());
+        js.str("");
+        js.clear();
+      }
       js << "setLevel(" << data_.Level() << ")";
       bridge::CallFunction(js.str().c_str());
       js.str("");
@@ -67,6 +72,8 @@ main::Menu::Menu() {
     if (std::strlen(command) == 0)
       return;
     else if (std::strcmp(command, "click") == 0) {
+      if (data_.incompatible_save_)
+        return;
       if (std::strlen(info) == 0)
         return;
       else if (std::strcmp(info, "true") == 0)
@@ -79,6 +86,8 @@ main::Menu::Menu() {
     if (std::strlen(command) == 0)
       return;
     else if (std::strcmp(command, "click") == 0) {
+      if (data_.incompatible_save_)
+        return;
       if (std::strlen(info) == 0)
         return;
       else if (std::strcmp(info, "true") == 0)
@@ -91,6 +100,8 @@ main::Menu::Menu() {
     if (std::strlen(command) == 0)
       return;
     else if (std::strcmp(command, "click") == 0) {
+      if (data_.incompatible_save_)
+        return;
       if (std::strlen(info) == 0)
         return;
       else if (std::strcmp(info, "true") == 0)
@@ -116,6 +127,8 @@ void main::Menu::FeedUri(
 void main::Menu::Escape() { bridge::Exit(); }
 
 void main::Menu::Play() {
+  if (data_.incompatible_save_)
+    return;
   progress_ = PROGRESS::GAME;
   RequestStage();
 }
