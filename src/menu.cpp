@@ -54,6 +54,10 @@ main::Menu::Menu() {
       js.clear();
       js << "setShowControls(" << data_.show_controls_ << ")";
       bridge::CallFunction(js.str().c_str());
+      js.str("");
+      js.clear();
+      js << "window.setThemePreference(" << data_.theme_ << ")";
+      bridge::CallFunction(js.str().c_str());
     }
   };
   handlers_["play"] = [&](const char *command, const char *info) {
@@ -67,6 +71,16 @@ main::Menu::Menu() {
       return;
     else if (std::strcmp(command, "click") == 0)
       Reset();
+  };
+  handlers_["theme"] = [&](const char *command, const char *info) {
+    if (std::strcmp(command, "change") != 0 || data_.incompatible_save_)
+      return;
+    if (std::strcmp(info, "0") == 0)
+      data_.theme_ = Data::THEME_SYSTEM;
+    else if (std::strcmp(info, "1") == 0)
+      data_.theme_ = Data::THEME_LIGHT;
+    else if (std::strcmp(info, "2") == 0)
+      data_.theme_ = Data::THEME_DARK;
   };
   handlers_["action-sound"] = [&](const char *command, const char *info) {
     if (std::strlen(command) == 0)

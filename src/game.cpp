@@ -99,7 +99,8 @@ void main::Game::Suspend() {
 
 void main::Game::Setup() {
   std::ostringstream js;
-  js << "setup(" << (data_.show_controls_ ? "true" : "false") << ")";
+  js << "window.setThemePreference(" << data_.theme_ << ");setup("
+     << (data_.show_controls_ ? "true" : "false") << ")";
   bridge::CallFunction(js.str().c_str());
 }
 

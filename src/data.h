@@ -17,6 +17,13 @@ public:
   void Reset();
 
 private:
+  enum Theme {
+    THEME_SYSTEM,
+    THEME_LIGHT,
+    THEME_DARK,
+    THEME_COUNT,
+  };
+
   enum CleanupPhase {
     CLEANUP_PLAYING,
     CLEANUP_START,
@@ -42,7 +49,7 @@ private:
   static constexpr int score_max_ = 1000000000;
   static constexpr int lines_max_ = 1000000;
   static constexpr int quadras_max_ = 100000;
-  static constexpr int save_version_ = 1;
+  static constexpr int save_version_ = 2;
 
   using Board = std::array<std::array<int, board_width_>, board_height_>;
   int score_ = 0;
@@ -51,6 +58,7 @@ private:
   bool action_sound_ = true;
   bool step_sound_ = true;
   bool show_controls_ = true;
+  int theme_ = THEME_SYSTEM;
   Board board_{};
   int piece_ = 0;
   int next_piece_ = 0;

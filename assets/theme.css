@@ -1,9 +1,9 @@
 :root {
-    color-scheme: light dark;
+    color-scheme: light;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     background: #f8fafc;
     color: #0f172a;
-    --page-background: #f8fafc;
+    --page-background: #a1a9b0;
     --surface-background: #ffffff;
     --surface-subtle-background: #f1f5f9;
     --control-background: #ffffff;
@@ -14,34 +14,51 @@
     --muted-text-color: #475569;
     --focus-color: #7c3aed;
     --accent-color: #0891b2;
-    --board-background: #f1f5f9;
-    --cell-background: #e8eef6;
+    --board-background: #ffffff;
+    --cell-background: #e0e0e0;
+    --piece-1-color: #0098b0;
+    --piece-2-color: #f5c400;
+    --piece-3-color: #b219d0;
+    --piece-4-color: #087d38;
+    --piece-5-color: #d50b40;
+    --piece-6-color: #0b3bb5;
+    --piece-7-color: #f57500;
     --highlight-background: #cffafe;
     --highlight-border-color: #0891b2;
     --highlight-shadow: rgb(8 145 178 / .2);
     --surface-shadow: 0 .75rem 2rem rgb(15 23 42 / .08);
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        background: #0b1020;
-        color: #f8fafc;
-        --page-background: #0b1020;
-        --surface-background: #111827;
-        --surface-subtle-background: #172033;
-        --control-background: #1e293b;
-        --control-active-background: #334155;
-        --border-color: #273449;
-        --strong-border-color: #64748b;
-        --text-color: #f8fafc;
-        --muted-text-color: #94a3b8;
-        --focus-color: #c4b5fd;
-        --accent-color: #22d3ee;
-        --board-background: #020617;
-        --cell-background: #111827;
-        --highlight-background: #164e63;
-        --highlight-border-color: #38bdf8;
-        --highlight-shadow: rgb(56 189 248 / .2);
-        --surface-shadow: 0 .75rem 2rem rgb(0 0 0 / .24);
-    }
+:root:not([data-theme]) {
+    visibility: hidden;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    background: #0b1020;
+    color: #f8fafc;
+    --page-background: #0b1020;
+    --surface-background: #111827;
+    --surface-subtle-background: #172033;
+    --control-background: #1e293b;
+    --control-active-background: #334155;
+    --border-color: #273449;
+    --strong-border-color: #64748b;
+    --text-color: #f8fafc;
+    --muted-text-color: #94a3b8;
+    --focus-color: #c4b5fd;
+    --accent-color: #22d3ee;
+    --board-background: #020617;
+    --cell-background: #111827;
+    --piece-1-color: #22d3ee;
+    --piece-2-color: #facc15;
+    --piece-3-color: #a78bfa;
+    --piece-4-color: #4ade80;
+    --piece-5-color: #fb7185;
+    --piece-6-color: #2563eb;
+    --piece-7-color: #fb923c;
+    --highlight-background: #164e63;
+    --highlight-border-color: #38bdf8;
+    --highlight-shadow: rgb(56 189 248 / .2);
+    --surface-shadow: 0 .75rem 2rem rgb(0 0 0 / .24);
 }

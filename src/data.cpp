@@ -91,11 +91,11 @@ void main::Data::Load(std::istream &input) {
   bool valid = static_cast<bool>(
       input >> loaded.score_ >> loaded.lines_ >> loaded.quadras_ >>
       loaded.action_sound_ >> loaded.step_sound_ >> loaded.show_controls_ >>
-      loaded.piece_ >> loaded.next_piece_ >> loaded.next_rotation_ >>
-      loaded.next_piece_x_ >> loaded.next_piece_y_ >> loaded.rotation_ >>
-      loaded.piece_x_ >> loaded.piece_y_ >> loaded.paused_ >>
-      loaded.game_over_ >> loaded.cleanup_phase_ >> loaded.cleanup_row_ >>
-      loaded.cleanup_count_);
+      loaded.theme_ >> loaded.piece_ >> loaded.next_piece_ >>
+      loaded.next_rotation_ >> loaded.next_piece_x_ >> loaded.next_piece_y_ >>
+      loaded.rotation_ >> loaded.piece_x_ >> loaded.piece_y_ >>
+      loaded.paused_ >> loaded.game_over_ >> loaded.cleanup_phase_ >>
+      loaded.cleanup_row_ >> loaded.cleanup_count_);
   for (std::size_t i = 0; valid && i < loaded.explosion_targets_.size(); ++i) {
     valid = static_cast<bool>(input >> loaded.explosion_targets_[i]);
   }
@@ -111,6 +111,7 @@ void main::Data::Load(std::istream &input) {
   valid = valid && loaded.score_ >= 0 && loaded.score_ <= score_max_ &&
           loaded.lines_ >= 0 && loaded.lines_ <= lines_max_ &&
           loaded.quadras_ >= 0 && loaded.quadras_ <= quadras_max_ &&
+          loaded.theme_ >= THEME_SYSTEM && loaded.theme_ < THEME_COUNT &&
           loaded.piece_ >= 0 && loaded.piece_ < 7 && loaded.next_piece_ >= 0 &&
           loaded.next_piece_ < 7 && loaded.next_rotation_ >= 0 &&
           loaded.next_rotation_ < 4 && loaded.next_piece_x_ >= 1 &&
@@ -142,6 +143,7 @@ void main::Data::Load(std::istream &input) {
   action_sound_ = loaded.action_sound_;
   step_sound_ = loaded.step_sound_;
   show_controls_ = loaded.show_controls_;
+  theme_ = loaded.theme_;
   board_ = loaded.board_;
   piece_ = loaded.piece_;
   next_piece_ = loaded.next_piece_;
@@ -161,8 +163,83 @@ void main::Data::Load(std::istream &input) {
   incompatible_save_version_ = save_version_;
 }
 
-bool main::Data::Convert(int version, std::istream &) {
+bool main::Data::Convert(int version, std::istream &input) {
   switch (version) {
+  case 1: {
+    Data loaded;
+    bool valid = static_cast<bool>(
+        input >> loaded.score_ >> loaded.lines_ >> loaded.quadras_ >>
+        loaded.action_sound_ >> loaded.step_sound_ >> loaded.show_controls_ >>
+        loaded.piece_ >> loaded.next_piece_ >> loaded.next_rotation_ >>
+        loaded.next_piece_x_ >> loaded.next_piece_y_ >> loaded.rotation_ >>
+        loaded.piece_x_ >> loaded.piece_y_ >> loaded.paused_ >>
+        loaded.game_over_ >> loaded.cleanup_phase_ >> loaded.cleanup_row_ >>
+        loaded.cleanup_count_);
+    for (std::size_t i = 0; valid && i < loaded.explosion_targets_.size();
+         ++i) {
+      valid = static_cast<bool>(input >> loaded.explosion_targets_[i]);
+    }
+    for (auto &row : loaded.board_)
+      for (int &cell : row)
+        if (valid)
+          valid = static_cast<bool>(input >> cell);
+    if (valid) {
+      input >> std::ws;
+      valid = input.eof() && !input.bad();
+    }
+
+    valid = valid && loaded.score_ >= 0 && loaded.score_ <= score_max_ &&
+            loaded.lines_ >= 0 && loaded.lines_ <= lines_max_ &&
+            loaded.quadras_ >= 0 && loaded.quadras_ <= quadras_max_ &&
+            loaded.piece_ >= 0 && loaded.piece_ < 7 &&
+            loaded.next_piece_ >= 0 && loaded.next_piece_ < 7 &&
+            loaded.next_rotation_ >= 0 && loaded.next_rotation_ < 4 &&
+            loaded.next_piece_x_ >= 1 && loaded.next_piece_x_ < 6 &&
+            loaded.next_piece_y_ >= 1 && loaded.next_piece_y_ < 4 &&
+            loaded.rotation_ >= 0 && loaded.rotation_ < 4 &&
+            loaded.piece_x_ >= -2 && loaded.piece_x_ < board_width_ &&
+            loaded.piece_y_ >= 0 && loaded.piece_y_ < board_height_ &&
+            loaded.cleanup_phase_ >= CLEANUP_PLAYING &&
+            loaded.cleanup_phase_ < CLEANUP_PHASE_COUNT &&
+            loaded.cleanup_row_ >= 0 && loaded.cleanup_row_ < board_height_ &&
+            loaded.cleanup_count_ >= 0 &&
+            loaded.cleanup_count_ <= board_height_;
+    for (std::size_t i = 0; valid && i < loaded.explosion_targets_.size();
+         ++i) {
+      valid = loaded.explosion_targets_[i] >= -1 &&
+              loaded.explosion_targets_[i] < board_width_ * board_height_;
+    }
+    for (const auto &row : loaded.board_)
+      for (int cell : row)
+        if (valid)
+          valid = cell >= 0 && cell <= 7;
+    if (!valid)
+      return false;
+
+    score_ = loaded.score_;
+    lines_ = loaded.lines_;
+    quadras_ = loaded.quadras_;
+    action_sound_ = loaded.action_sound_;
+    step_sound_ = loaded.step_sound_;
+    show_controls_ = loaded.show_controls_;
+    theme_ = loaded.theme_;
+    board_ = loaded.board_;
+    piece_ = loaded.piece_;
+    next_piece_ = loaded.next_piece_;
+    next_rotation_ = loaded.next_rotation_;
+    next_piece_x_ = loaded.next_piece_x_;
+    next_piece_y_ = loaded.next_piece_y_;
+    rotation_ = loaded.rotation_;
+    piece_x_ = loaded.piece_x_;
+    piece_y_ = loaded.piece_y_;
+    paused_ = loaded.paused_;
+    game_over_ = loaded.game_over_;
+    cleanup_phase_ = loaded.cleanup_phase_;
+    cleanup_row_ = loaded.cleanup_row_;
+    cleanup_count_ = loaded.cleanup_count_;
+    explosion_targets_ = loaded.explosion_targets_;
+    return true;
+  }
   default:
     return false;
   }
@@ -182,6 +259,7 @@ void main::Data::Save(std::ostream &output) const {
          << action_sound_ << '\n'
          << step_sound_ << '\n'
          << show_controls_ << '\n'
+         << theme_ << '\n'
          << piece_ << '\n'
          << next_piece_ << '\n'
          << next_rotation_ << '\n'
@@ -208,6 +286,7 @@ void main::Data::Reset() {
   action_sound_ = true;
   step_sound_ = false;
   show_controls_ = false;
+  theme_ = THEME_SYSTEM;
   Restart();
 }
 

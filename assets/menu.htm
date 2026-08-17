@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1, user-scalable=0">
     <meta name="color-scheme" content="light dark">
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8fafc">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1020">
+    <meta name="theme-color" content="#f8fafc">
+    <script src="theme.js"></script>
     <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="menu.css">
     <script src="menu.js"></script>
@@ -87,6 +87,16 @@
             <td colspan="2" class="option">
                 <input id="show-controls" type="checkbox" onclick="showControls()">
                 <label for="show-controls">Show Controls</label>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" class="option theme-option">
+                <label for="theme">Theme</label>
+                <select id="theme" onchange="themeChanged()">
+                    <option value="0">System</option>
+                    <option value="1">Light</option>
+                    <option value="2">Dark</option>
+                </select>
             </td>
         </tr>
         <tr>

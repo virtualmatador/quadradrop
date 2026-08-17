@@ -8,13 +8,20 @@ function reset()
     CallHandler("reset", "click", "");
 }
 
+function themeChanged()
+{
+    const theme = document.getElementById("theme").value;
+    window.setThemePreference(theme);
+    CallHandler("theme", "change", theme);
+}
+
 function setSaveVersionError(dataVersion, expectedVersion)
 {
     document.getElementById("save-data-version").textContent = dataVersion;
     document.getElementById("save-expected-version").textContent = expectedVersion;
     document.getElementById("save-version-error").hidden = false;
     document.getElementById("play").disabled = true;
-    ["action-sound", "step-sound", "show-controls"].forEach(function(id)
+    ["action-sound", "step-sound", "show-controls", "theme"].forEach(function(id)
     {
         document.getElementById(id).disabled = true;
     });

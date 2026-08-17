@@ -60,6 +60,17 @@ body > table:not(#controls)
     text-align: left;
 }
 
+#controls td.theme-option
+{
+    padding-left: .5rem;
+    text-align: center;
+}
+
+.theme-option label
+{
+    margin-right: .5rem;
+}
+
 #controls td.key
 {
     padding-right: .75rem;
@@ -104,7 +115,8 @@ body > table:not(#controls)
     background: var(--highlight-background);
 }
 
-button
+button,
+select
 {
     width: 8em;
     min-height: 2.5rem;
@@ -122,14 +134,16 @@ button:active
 }
 
 button:disabled,
-input:disabled
+input:disabled,
+select:disabled
 {
     cursor: default;
     opacity: .6;
 }
 
 button:focus-visible,
-input:focus-visible
+input:focus-visible,
+select:focus-visible
 {
     outline: 2px solid var(--focus-color);
     outline-offset: 2px;
